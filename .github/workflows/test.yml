@@ -24,7 +24,7 @@ jobs:
           pip install .[test]
       - name: Static type check
         run: |
-          mypy --install-types raytrax
+          mypy --install-types --non-interactive raytrax
       - name: Test with pytest
         run: |
           pytest
