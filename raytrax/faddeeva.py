@@ -21,7 +21,10 @@ def wofz_jax(z):
 
     # Use pure_callback for scalar or batched complex values
     return jax.pure_callback(
-        scipy_wofz, jax.ShapeDtypeStruct(shape=shape, dtype=dtype), z
+        scipy_wofz,
+        jax.ShapeDtypeStruct(shape=shape, dtype=dtype),
+        z,
+        vmap_method="sequential",
     )
 
 
