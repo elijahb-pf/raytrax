@@ -1,0 +1,28 @@
+[build-system]
+requires = ["setuptools >= 77.0.3"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "raytrax"
+version = "0.0.1"
+dependencies = [
+  "jax",
+  "jaxtyping",
+  "numpy",
+  "scipy",
+]
+requires-python = ">=3.10"
+authors = [
+  {name = "David Straub", email = "straub@protonmail.com"},
+]
+description = "An ECRH ray tracer based on JAX"
+readme = "README.md"
+
+[project.optional-dependencies]
+test = [
+  "pytest",
+  "mypy",
+]
+
+[project.urls]
+Homepage = "https://github.com/proximafusion/raytrax"
