@@ -4,7 +4,10 @@ import jax.numpy as jnp
 import numpy as np
 import pytest
 
-from raytrax.fourier import evaluate_rphiz_on_toroidal_grid
+from raytrax.fourier import (
+    evaluate_magnetic_field_on_toroidal_grid,
+    evaluate_rphiz_on_toroidal_grid,
+)
 
 
 @dataclass
@@ -13,6 +16,10 @@ class TestWout:
     zmns: np.ndarray
     xm: np.ndarray
     xn: np.ndarray
+    bsupumnc: np.ndarray
+    bsupvmnc: np.ndarray
+    xm_nyq: np.ndarray
+    xn_nyq: np.ndarray
     lasym: bool = False
 
 
@@ -30,7 +37,23 @@ def torus_wout():
     xn = np.array([0, 0])
     zmns = np.zeros((2, n_surfaces))
     zmns[1] = np.linspace(0, 1, n_surfaces) * minor_radius
-    return TestWout(rmnc=rmnc, zmns=zmns, xm=xm, xn=xn, lasym=False)
+
+    xm_nyq = np.array([0, 1])
+    xn_nyq = np.array([0, 0])
+    bsupumnc = np.zeros((2, n_surfaces))
+    bsupvmnc = np.zeros((2, n_surfaces))
+    bsupvmnc[0] = 0.7
+    return TestWout(
+        rmnc=rmnc,
+        zmns=zmns,
+        xm=xm,
+        xn=xn,
+        bsupumnc=bsupumnc,
+        bsupvmnc=bsupvmnc,
+        xm_nyq=xm_nyq,
+        xn_nyq=xn_nyq,
+        lasym=False,
+    )
 
 
 def test_evaluate_rphiz_on_toroidal_grid(torus_wout):
@@ -47,8 +70,7 @@ def test_evaluate_rphiz_on_toroidal_grid(torus_wout):
     assert s_theta_phi.shape == (5, 6, 7, 3)
     rphiz = evaluate_rphiz_on_toroidal_grid(torus_wout, s_theta_phi)
     assert rphiz.shape == (5, 6, 7, 3)
-    # some of them will be NaN, but hopefully not all
-    assert np.any(np.isfinite(rphiz))
+    assert np.all(np.isfinite(rphiz))
 
     phi = s_theta_phi[..., 2]
     np.testing.assert_allclose(rphiz[..., 1], phi, rtol=0, atol=1e-16)
@@ -59,3 +81,36 @@ def test_evaluate_rphiz_on_toroidal_grid(torus_wout):
     minor_radius = 0.5
     r_expected = major_radius + rho * jnp.cos(theta) * minor_radius
     np.testing.assert_allclose(rphiz[..., 0], r_expected, rtol=0, atol=1e-16)
+
+
+def test_evaluate_magnetic_field_on_toroidal_grid(torus_wout):
+    s_theta_phi = jnp.stack(
+        jnp.meshgrid(
+            jnp.linspace(0, 1, 5),
+            jnp.linspace(0, 2 * jnp.pi, 6),
+            jnp.linspace(0, 2 * jnp.pi, 7),
+            indexing="ij",
+        ),
+        axis=-1,
+    )
+    bfield = evaluate_magnetic_field_on_toroidal_grid(torus_wout, s_theta_phi)
+    assert bfield.shape == (5, 6, 7, 3)
+    assert np.all(np.isfinite(bfield))
+
+    rho = s_theta_phi[..., 0]
+    theta = s_theta_phi[..., 1]
+    phi = s_theta_phi[..., 2]
+    major_radius = 2.0
+    minor_radius = 0.5
+    r = major_radius + rho * jnp.cos(theta) * minor_radius
+    bfield_expected_xy = 0.7 * jnp.stack(
+        [
+            -r * jnp.sin(phi),
+            r * jnp.cos(phi),
+        ],
+        axis=-1,
+    )
+    # z component should be zero
+    np.testing.assert_allclose(bfield[..., 2], 0.0, rtol=0, atol=1e-16)
+    # xy components
+    np.testing.assert_allclose(bfield[..., :2], bfield_expected_xy, rtol=0, atol=1e-16)
