@@ -17,6 +17,7 @@ class TestWout:
     xm_nyq: jax.Array
     xn_nyq: jax.Array
     ns: int
+    nfp: int
     lasym: bool = False
 
 
@@ -50,5 +51,6 @@ def torus_wout():
         xm_nyq=jnp.array(xm_nyq),
         xn_nyq=jnp.array(xn_nyq),
         ns=5,
+        nfp=1,
         lasym=False,
     )

@@ -5,6 +5,12 @@ import numpy as np
 from beartype import beartype as typechecker
 from scipy.interpolate import griddata
 
+from .fourier import (
+    evaluate_magnetic_field_on_toroidal_grid,
+    evaluate_rphiz_on_toroidal_grid,
+)
+from .types import WoutLike
+
 
 @jt.jaxtyped(typechecker=typechecker)
 def interpolate_toroidal_to_cylindrical_grid(
@@ -24,6 +30,59 @@ def interpolate_toroidal_to_cylindrical_grid(
             np.array(value_toroidal[:, :, i_phi]).reshape(-1, n_values),
             np.array(rz_cylindrical).reshape(-1, 2),
             method="linear",
-        ).reshape(n_r, n_z, 3)
+        ).reshape(n_r, n_z, n_values)
         values.append(value)
     return jnp.stack(values, axis=1)
+
+
+@jt.jaxtyped(typechecker=typechecker)
+def cylindrical_grid_for_equilibrium(
+    equilibrium: WoutLike,
+    n_rho: int = 100,
+    n_theta: int = 100,
+    n_phi: int = 100,
+    n_r: int = 100,
+    n_z: int = 100,
+) -> jt.Float[jax.Array, "n_r n_phi n_z rhoBxyz=4"]:
+    """Create a cylindrical grid for the given equilibrium."""
+    if equilibrium.lasym:
+        raise NotImplementedError(
+            "Non stellarator symmetric equilibria are not supported yet."
+        )
+    phi_max = 2 * jnp.pi / equilibrium.nfp / 2
+    rho_theta_phi = jnp.stack(
+        jnp.meshgrid(
+            jnp.linspace(0, 1, n_rho),
+            jnp.linspace(0, 2 * jnp.pi, n_theta),
+            jnp.linspace(0, phi_max, n_phi),
+            indexing="ij",
+        ),
+        axis=-1,
+    )
+    rphiz = evaluate_rphiz_on_toroidal_grid(
+        equilibrium,
+        rho_theta_phi,
+    )
+    Bxyz = evaluate_magnetic_field_on_toroidal_grid(
+        equilibrium,
+        rho_theta_phi,
+    )
+    rmin = jnp.min(rphiz[..., 0])
+    rmax = jnp.max(rphiz[..., 0])
+    zmin = jnp.min(rphiz[..., 2])
+    zmax = jnp.max(rphiz[..., 2])
+    rz_cylindrical = jnp.stack(
+        jnp.meshgrid(
+            jnp.linspace(rmin, rmax, n_r),
+            jnp.linspace(zmin, zmax, n_z),
+            indexing="ij",
+        ),
+        axis=-1,
+    )
+    # Concatenate along the last dimension
+    value_toroidal = jnp.concatenate([rphiz[..., :1], Bxyz[..., :]], axis=-1)
+    return interpolate_toroidal_to_cylindrical_grid(
+        rphiz_toroidal=rphiz,
+        rz_cylindrical=rz_cylindrical,
+        value_toroidal=value_toroidal,
+    )

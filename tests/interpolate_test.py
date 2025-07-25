@@ -2,7 +2,10 @@ import jax.numpy as jnp
 import numpy as np
 
 from raytrax.fourier import evaluate_rphiz_on_toroidal_grid
-from raytrax.interpolate import interpolate_toroidal_to_cylindrical_grid
+from raytrax.interpolate import (
+    cylindrical_grid_for_equilibrium,
+    interpolate_toroidal_to_cylindrical_grid,
+)
 
 from .fixtures import torus_wout
 
@@ -42,3 +45,47 @@ def test_interpolate_toroidal_to_cylindrical_grid(torus_wout):
     np.testing.assert_allclose(
         values_cylindrical[np.isfinite(values_cylindrical)], 1.0, rtol=0, atol=1e-15
     )
+
+
+def test_cylindrical_grid_for_equilibrium(torus_wout):
+    """Test that cylindrical_grid_for_equilibrium works correctly."""
+    n_rho = 10
+    n_theta = 8
+    n_phi = 6
+    n_r = 7
+    n_z = 9
+
+    grid = cylindrical_grid_for_equilibrium(
+        equilibrium=torus_wout,
+        n_rho=n_rho,
+        n_theta=n_theta,
+        n_phi=n_phi,
+        n_r=n_r,
+        n_z=n_z,
+    )
+
+    assert grid.shape == (n_r, n_phi, n_z, 4)
+    assert np.any(np.isfinite(grid))
+
+    rphiz_data = grid[..., 0]
+    field_data = grid[..., 1]
+
+    assert np.any(np.isfinite(rphiz_data))
+    assert np.any(np.isfinite(field_data))
+
+    r_values = grid[..., 0, 0]
+    z_values = grid[..., 0, 2]
+
+    assert np.all(r_values[np.isfinite(r_values)] > 0)
+
+    major_radius = 2.0
+    minor_radius = 0.5
+    finite_r = r_values[np.isfinite(r_values)]
+    finite_z = z_values[np.isfinite(z_values)]
+    if len(finite_r) > 0:
+        assert np.min(finite_r) >= major_radius - minor_radius
+        assert np.max(finite_r) <= major_radius + minor_radius
+
+    if len(finite_z) > 0:
+        assert np.min(finite_z) >= -minor_radius
+        assert np.max(finite_z) <= minor_radius
