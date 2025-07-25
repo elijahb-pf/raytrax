@@ -85,7 +85,7 @@ def test_evaluate_rphiz_on_toroidal_grid(torus_wout):
     major_radius = 2.0
     minor_radius = 0.5
     r_expected = major_radius + rho * jnp.cos(theta) * minor_radius
-    np.testing.assert_allclose(rphiz[..., 0], r_expected, rtol=0, atol=1e-6)
+    np.testing.assert_allclose(rphiz[..., 0], r_expected, rtol=0, atol=1e-15)
 
 
 def test_evaluate_magnetic_field_on_toroidal_grid(torus_wout):
@@ -118,4 +118,4 @@ def test_evaluate_magnetic_field_on_toroidal_grid(torus_wout):
     # z component should be zero
     np.testing.assert_allclose(bfield[..., 2], 0.0, rtol=0, atol=1e-6)
     # xy components
-    np.testing.assert_allclose(bfield[..., :2], bfield_expected_xy, rtol=0, atol=1e-6)
+    np.testing.assert_allclose(bfield[..., :2], bfield_expected_xy, rtol=0, atol=1e-15)
