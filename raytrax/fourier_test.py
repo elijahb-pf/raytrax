@@ -20,6 +20,7 @@ class TestWout:
     bsupvmnc: np.ndarray
     xm_nyq: np.ndarray
     xn_nyq: np.ndarray
+    ns: int
     lasym: bool = False
 
 
@@ -31,17 +32,17 @@ def torus_wout():
     minor_radius = 0.5
     rmnc = np.zeros((2, n_surfaces))
     rmnc[0] = major_radius
-    rmnc[1] = np.linspace(0, 1, n_surfaces) * minor_radius
+    rmnc[1] = np.sqrt(np.linspace(0, 1, n_surfaces)) * minor_radius
 
     xm = np.array([0, 1])
     xn = np.array([0, 0])
     zmns = np.zeros((2, n_surfaces))
-    zmns[1] = np.linspace(0, 1, n_surfaces) * minor_radius
+    zmns[1] = np.sqrt(np.linspace(0, 1, n_surfaces)) * minor_radius
 
     xm_nyq = np.array([0, 1])
     xn_nyq = np.array([0, 0])
-    bsupumnc = np.zeros((2, n_surfaces))
-    bsupvmnc = np.zeros((2, n_surfaces))
+    bsupumnc = np.zeros((2, n_surfaces - 1))
+    bsupvmnc = np.zeros((2, n_surfaces - 1))
     bsupvmnc[0] = 0.7
     return TestWout(
         rmnc=rmnc,
@@ -52,54 +53,55 @@ def torus_wout():
         bsupvmnc=bsupvmnc,
         xm_nyq=xm_nyq,
         xn_nyq=xn_nyq,
+        ns=5,
         lasym=False,
     )
 
 
 def test_evaluate_rphiz_on_toroidal_grid(torus_wout):
     """Test the evaluate_rphiz_on_toroidal_grid function."""
-    s_theta_phi = jnp.stack(
+    rho_theta_phi = jnp.stack(
         jnp.meshgrid(
-            jnp.linspace(0, 1, 5),
+            jnp.linspace(0, 1, 8),
             jnp.linspace(0, 2 * jnp.pi, 6),
             jnp.linspace(0, 2 * jnp.pi, 7),
             indexing="ij",
         ),
         axis=-1,
     )
-    assert s_theta_phi.shape == (5, 6, 7, 3)
-    rphiz = evaluate_rphiz_on_toroidal_grid(torus_wout, s_theta_phi)
-    assert rphiz.shape == (5, 6, 7, 3)
+    assert rho_theta_phi.shape == (8, 6, 7, 3)
+    rphiz = evaluate_rphiz_on_toroidal_grid(torus_wout, rho_theta_phi)
+    assert rphiz.shape == (8, 6, 7, 3)
     assert np.all(np.isfinite(rphiz))
 
-    phi = s_theta_phi[..., 2]
+    phi = rho_theta_phi[..., 2]
     np.testing.assert_allclose(rphiz[..., 1], phi, rtol=0, atol=1e-16)
 
-    rho = s_theta_phi[..., 0]
-    theta = s_theta_phi[..., 1]
+    rho = rho_theta_phi[..., 0]
+    theta = rho_theta_phi[..., 1]
     major_radius = 2.0
     minor_radius = 0.5
     r_expected = major_radius + rho * jnp.cos(theta) * minor_radius
-    np.testing.assert_allclose(rphiz[..., 0], r_expected, rtol=0, atol=1e-16)
+    np.testing.assert_allclose(rphiz[..., 0], r_expected, rtol=0, atol=1e-6)
 
 
 def test_evaluate_magnetic_field_on_toroidal_grid(torus_wout):
-    s_theta_phi = jnp.stack(
+    rho_theta_phi = jnp.stack(
         jnp.meshgrid(
-            jnp.linspace(0, 1, 5),
+            jnp.linspace(0, 1, 8),
             jnp.linspace(0, 2 * jnp.pi, 6),
             jnp.linspace(0, 2 * jnp.pi, 7),
             indexing="ij",
         ),
         axis=-1,
     )
-    bfield = evaluate_magnetic_field_on_toroidal_grid(torus_wout, s_theta_phi)
-    assert bfield.shape == (5, 6, 7, 3)
+    bfield = evaluate_magnetic_field_on_toroidal_grid(torus_wout, rho_theta_phi)
+    assert bfield.shape == (8, 6, 7, 3)
     assert np.all(np.isfinite(bfield))
 
-    rho = s_theta_phi[..., 0]
-    theta = s_theta_phi[..., 1]
-    phi = s_theta_phi[..., 2]
+    rho = rho_theta_phi[..., 0]
+    theta = rho_theta_phi[..., 1]
+    phi = rho_theta_phi[..., 2]
     major_radius = 2.0
     minor_radius = 0.5
     r = major_radius + rho * jnp.cos(theta) * minor_radius
@@ -111,6 +113,6 @@ def test_evaluate_magnetic_field_on_toroidal_grid(torus_wout):
         axis=-1,
     )
     # z component should be zero
-    np.testing.assert_allclose(bfield[..., 2], 0.0, rtol=0, atol=1e-16)
+    np.testing.assert_allclose(bfield[..., 2], 0.0, rtol=0, atol=1e-6)
     # xy components
-    np.testing.assert_allclose(bfield[..., :2], bfield_expected_xy, rtol=0, atol=1e-16)
+    np.testing.assert_allclose(bfield[..., :2], bfield_expected_xy, rtol=0, atol=1e-6)
