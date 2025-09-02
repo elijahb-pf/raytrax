@@ -1,3 +1,5 @@
+# type: ignore
+
 # state file generated using paraview version 6.0.0
 import paraview
 paraview.compatibility.major = 6

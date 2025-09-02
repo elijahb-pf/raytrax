@@ -71,21 +71,22 @@ if __name__ == "__main__":
     cylindrical_grid = cylindrical_grid_for_equilibrium(
         equilibrium=equilibrium, n_rho=40, n_theta=45, n_phi=50, n_r=45, n_z=55
     )
+    cylindrical_grid_np = np.array(cylindrical_grid)
 
     # cylindrical to cartesian
-    r = cylindrical_grid[..., 0]
-    phi = cylindrical_grid[..., 1]
-    z = cylindrical_grid[..., 2]
+    r = cylindrical_grid_np[..., 0]
+    phi = cylindrical_grid_np[..., 1]
+    z = cylindrical_grid_np[..., 2]
     x = r * np.cos(phi)
     y = r * np.sin(phi)
 
     # create pyvista structured grid
-    grid = pv.StructuredGrid(np.array(x), np.array(y), np.array(z))
-    grid.point_data["B"] = cylindrical_grid[..., -3:].reshape(-1, 3, order="F")
+    grid = pv.StructuredGrid(x, y, z)
+    grid.point_data["B"] = cylindrical_grid_np[..., -3:].reshape(-1, 3, order="F")
     grid.point_data["absB"] = np.linalg.norm(
-        cylindrical_grid[..., -3:], axis=-1
+        cylindrical_grid_np[..., -3:], axis=-1
     ).reshape(-1, order="F")
-    grid.point_data["rho"] = cylindrical_grid[..., 3].reshape(-1, order="F")
+    grid.point_data["rho"] = cylindrical_grid_np[..., 3].reshape(-1, order="F")
 
     # save VTS
     grid.save(data_dir / "w7x.vts")
