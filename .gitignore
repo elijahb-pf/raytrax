@@ -1,5 +1,9 @@
 *.json
 
+# NetCDF files (VMEC)
+*.nc
+
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[codz]
