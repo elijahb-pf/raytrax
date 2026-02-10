@@ -34,3 +34,9 @@ test = [
 
 [project.urls]
 Homepage = "https://github.com/proximafusion/raytrax"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["*_test.py", "test_*.py"]
+# Explicitly exclude integration tests
+norecursedirs = ["integration_tests", ".git", ".tox", "dist", "build", "*.egg"]

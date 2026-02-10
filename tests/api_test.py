@@ -25,12 +25,15 @@ def test_get_interpolator_for_equilibrium_w7x(w7x_wout):
     assert interpolator.magnetic_field.shape == (45, 50, 55, 3)
     assert interpolator.rho.shape == (45, 50, 55)
 
-    # Check that non-NaN rho values are within expected range [0, 1]
-    # We expect some NaN values for points outside the plasma
+    # Check that non-NaN rho values are non-negative
+    # Note: rho > 1 is expected for points outside the LCMS (in the vacuum region)
     valid_rho = interpolator.rho[~jnp.isnan(interpolator.rho)]
     assert valid_rho.size > 0, "All rho values are NaN"
     assert jnp.all(valid_rho >= 0.0)
-    assert jnp.all(valid_rho <= 1.0)
+    # Check that we have some points inside the plasma (rho < 1)
+    assert jnp.any(valid_rho < 1.0), "No points found inside plasma (rho < 1)"
+    # Check that we have some points outside the plasma (rho > 1)
+    assert jnp.any(valid_rho > 1.0), "No points found outside plasma (rho > 1)"
 
     # Verify that the magnetic field has non-zero values
     assert not jnp.all(interpolator.magnetic_field == 0.0)
