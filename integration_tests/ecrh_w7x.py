@@ -4,18 +4,20 @@ import numpy as np
 import jax.numpy as jnp
 from pathlib import Path
 import sys
+import shutil
 
 # Add parent directory to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent))
 sys.path.insert(0, str(Path(__file__).parent.parent / "tests"))
 
-from vmecpp import VmecWOut
 from raytrax.api import get_interpolator_for_equilibrium, trace
 from raytrax.types import Beam, RadialProfiles
 from raytrax.data import get_w7x_wout
 from travis_wrapper import run_travis, TravisECRHInput, save_reference_data
 
-TRAVIS_EXE = Path("/home/david/Code/Forschung/travis_2018u/bin/travis-nc")
+# Find TRAVIS executable in PATH, or None if not available
+_travis_exe_path = shutil.which("travis-nc")
+TRAVIS_EXE = Path(_travis_exe_path) if _travis_exe_path else None
 TRAVIS_OUTPUT_DIR = Path("/tmp/travis_ecrh_w7x")
 TRAVIS_REF_FILE = Path(__file__).parent / "data" / "travis_w7x_reference.json"
 B0_TARGET = 2.52076  # Target B0 normalization at magnetic axis
@@ -172,8 +174,8 @@ def main():
 
     TRAVIS_OUTPUT_DIR.mkdir(exist_ok=True)
 
-    if not TRAVIS_EXE.exists():
-        print(f"WARNING: TRAVIS executable not found at {TRAVIS_EXE}")
+    if TRAVIS_EXE is None or not TRAVIS_EXE.exists():
+        print(f"WARNING: TRAVIS executable 'travis-nc' not found in PATH")
         print("Skipping TRAVIS comparison")
         travis_result = None
     else:
