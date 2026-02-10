@@ -105,21 +105,21 @@ def main():
 
     # Load equilibrium from JSON and save to NetCDF for TRAVIS
     wout_nc_path = data_dir / "w7x.nc"
-    
+
     print("Loading W7-X equilibrium from JSON...")
     wout = get_w7x_wout()
-    
+
     # Get native B0 and compute scaling factor
     b0_native = find_b0_on_axis(wout)
     b_scale = B0_TARGET / b0_native
     print(f"B0 on axis (native): {b0_native:.4f} T")
     print(f"Target B0: {B0_TARGET:.4f} T")
     print(f"Scaling factor: {b_scale:.6f}")
-    
+
     # Save unscaled equilibrium for TRAVIS (will use b0_normalization to scale)
     print(f"Saving equilibrium as NetCDF: {wout_nc_path}")
     wout.save(wout_nc_path)
-    
+
     # For raytrax, apply magnetic_field_scale to match target
     eq_interp = get_interpolator_for_equilibrium(wout, magnetic_field_scale=b_scale)
 
@@ -252,11 +252,13 @@ def main():
 
         # Extract TRAVIS data from LCMS onwards
         travis_pos_from_lcms = travis_result.position_m[travis_lcms_idx:]
-        s_travis_from_lcms = travis_result.arc_length_m[travis_lcms_idx:] - s_lcms_travis
-        
+        s_travis_from_lcms = (
+            travis_result.arc_length_m[travis_lcms_idx:] - s_lcms_travis
+        )
+
         # Align TRAVIS arc length to match raytrax starting point (both at LCMS entry)
         s_travis_aligned = s_travis_from_lcms + s[0]
-        
+
         # Find overlapping arc length region
         s_min = max(s[0], s_travis_aligned[0])
         s_max = min(s[-1], s_travis_aligned[-1])
@@ -314,52 +316,68 @@ def main():
         print(f"\nComparison statistics:")
         print(f"  XYZ Position: RMS = {np.sqrt(np.mean(pos_dist**2))*1000:.2f} mm")
         print(f"  |B|: Mean error = {np.mean(np.abs(B_diff/B_travis_at_rx))*100:.2f}%")
-        print(f"  ne:  Mean error = {np.mean(np.abs(ne_diff/ne_travis_at_rx))*100:.2f}%")
-        print(f"  Te:  Mean error = {np.mean(np.abs(te_diff/te_travis_at_rx))*100:.2f}%")
+        print(
+            f"  ne:  Mean error = {np.mean(np.abs(ne_diff/ne_travis_at_rx))*100:.2f}%"
+        )
+        print(
+            f"  Te:  Mean error = {np.mean(np.abs(te_diff/te_travis_at_rx))*100:.2f}%"
+        )
         print(f"  rho: RMS = {np.sqrt(np.mean(rho_diff**2)):.4f}")
-        
+
         # Detailed tabulation - write to file
         table_file = Path(__file__).parent / "data" / "rho_comparison.txt"
-        with open(table_file, 'w') as f:
+        with open(table_file, "w") as f:
             f.write(f"{'='*100}\n")
             f.write("DETAILED ρ vs s COMPARISON\n")
             f.write(f"{'='*100}\n")
-            f.write(f"{'s [m]':>10} {'ρ_raytrax':>12} {'ρ_TRAVIS':>12} {'Δρ':>10} {'ne_rx':>10} {'ne_tr':>10} {'Te_rx':>10} {'Te_tr':>10}\n")
+            f.write(
+                f"{'s [m]':>10} {'ρ_raytrax':>12} {'ρ_TRAVIS':>12} {'Δρ':>10} {'ne_rx':>10} {'ne_tr':>10} {'Te_rx':>10} {'Te_tr':>10}\n"
+            )
             f.write(f"{'-'*100}\n")
             for i in range(len(rho_arr_rx)):
                 s_val = s[mask_rx][i]
-                f.write(f"{s_val:10.4f} {rho_arr_rx[i]:12.4f} {rho_travis_at_rx[i]:12.4f} {rho_diff[i]:10.4f} "
-                      f"{ne_arr_rx[i]:10.4f} {ne_travis_at_rx[i]:10.4f} {te_arr_rx[i]:10.3f} {te_travis_at_rx[i]:10.3f}\n")
+                f.write(
+                    f"{s_val:10.4f} {rho_arr_rx[i]:12.4f} {rho_travis_at_rx[i]:12.4f} {rho_diff[i]:10.4f} "
+                    f"{ne_arr_rx[i]:10.4f} {ne_travis_at_rx[i]:10.4f} {te_arr_rx[i]:10.3f} {te_travis_at_rx[i]:10.3f}\n"
+                )
             f.write(f"{'='*100}\n")
         print(f"\nDetailed ρ vs s comparison saved to: {table_file}")
-        
+
         # Debug: Check vacuum propagation and rho gradient
         print(f"\n{'='*80}")
         print("DEBUG: Vacuum propagation and ρ gradient check")
         print(f"{'='*80}")
-        
+
         # Check if rays are actually in vacuum at start
         idx_rx_first = 0
         s_rx_first = s[mask_rx][idx_rx_first]
         xyz_rx_first = pos[mask_rx][idx_rx_first]
         rho_rx_first = rho_arr_rx[idx_rx_first]
-        
+
         print(f"\nraytrax first point at s={s_rx_first:.4f} m:")
-        print(f"  XYZ: [{xyz_rx_first[0]:.6f}, {xyz_rx_first[1]:.6f}, {xyz_rx_first[2]:.6f}] m")
+        print(
+            f"  XYZ: [{xyz_rx_first[0]:.6f}, {xyz_rx_first[1]:.6f}, {xyz_rx_first[2]:.6f}] m"
+        )
         print(f"  ρ_raytrax: {rho_rx_first:.6f}")
         print(f"  Is this in plasma (ρ<1)? {rho_rx_first < 1.0}")
-        
+
         # Find corresponding TRAVIS point - but check actual TRAVIS data, not interpolated
         print(f"\nTRAVIS points near s={s_rx_first:.4f} m (aligned):")
         s_travis_aligned = travis_result.arc_length_m + (s[0] - s_lcms_travis)
-        for i in range(max(0, travis_lcms_idx-2), min(len(travis_result.arc_length_m), travis_lcms_idx+5)):
-            print(f"  idx={i}: s={s_travis_aligned[i]:.4f} m, XYZ=[{travis_result.position_m[i,0]:.6f}, {travis_result.position_m[i,1]:.6f}, {travis_result.position_m[i,2]:.6f}], ρ={travis_result.rho[i]:.6f}")
-        
+        for i in range(
+            max(0, travis_lcms_idx - 2),
+            min(len(travis_result.arc_length_m), travis_lcms_idx + 5),
+        ):
+            print(
+                f"  idx={i}: s={s_travis_aligned[i]:.4f} m, XYZ=[{travis_result.position_m[i,0]:.6f}, {travis_result.position_m[i,1]:.6f}, {travis_result.position_m[i,2]:.6f}], ρ={travis_result.rho[i]:.6f}"
+            )
+
         # Check ρ gradient at edge
         print(f"\nρ gradient test at edge:")
         from raytrax.interpolate import build_rho_interpolator
+
         rho_fn = build_rho_interpolator(eq_interp)
-        
+
         # Sample points along a line near the edge
         test_positions = [
             xyz_rx_first,
@@ -370,39 +388,53 @@ def main():
         for i, xyz in enumerate(test_positions):
             rho_val = float(rho_fn(jnp.array(xyz)))
             dist = np.linalg.norm(xyz - xyz_rx_first) * 1000
-            print(f"  +{dist:.1f}mm in X: ρ={rho_val:.6f}, Δρ={rho_val-rho_rx_first:.6f}")
-        
+            print(
+                f"  +{dist:.1f}mm in X: ρ={rho_val:.6f}, Δρ={rho_val-rho_rx_first:.6f}"
+            )
+
         # Check antenna position
         print(f"\nBeam starting position (antenna):")
-        print(f"  XYZ: [{antenna_cart[0]:.6f}, {antenna_cart[1]:.6f}, {antenna_cart[2]:.6f}] m")
-        print(f"  Nominal direction: [{direction[0]:.6f}, {direction[1]:.6f}, {direction[2]:.6f}]")
-        
+        print(
+            f"  XYZ: [{antenna_cart[0]:.6f}, {antenna_cart[1]:.6f}, {antenna_cart[2]:.6f}] m"
+        )
+        print(
+            f"  Nominal direction: [{direction[0]:.6f}, {direction[1]:.6f}, {direction[2]:.6f}]"
+        )
+
         # Compute actual directions from antenna to first points
         vec_to_rx_first = xyz_rx_first - np.array(antenna_cart)
         dist_to_rx_first = np.linalg.norm(vec_to_rx_first)
         dir_rx_actual = vec_to_rx_first / dist_to_rx_first
-        
+
         # Find first TRAVIS point
         xyz_tr_first = travis_result.position_m[travis_lcms_idx]
         vec_to_tr_first = xyz_tr_first - np.array(antenna_cart)
         dist_to_tr_first = np.linalg.norm(vec_to_tr_first)
         dir_tr_actual = vec_to_tr_first / dist_to_tr_first
-        
+
         print(f"\nraytrax first point:")
         print(f"  Distance from antenna: {dist_to_rx_first:.6f} m")
-        print(f"  Actual direction: [{dir_rx_actual[0]:.6f}, {dir_rx_actual[1]:.6f}, {dir_rx_actual[2]:.6f}]")
-        print(f"  Direction error: {np.linalg.norm(dir_rx_actual - np.array(direction))*1e6:.2f} ppm")
-        
+        print(
+            f"  Actual direction: [{dir_rx_actual[0]:.6f}, {dir_rx_actual[1]:.6f}, {dir_rx_actual[2]:.6f}]"
+        )
+        print(
+            f"  Direction error: {np.linalg.norm(dir_rx_actual - np.array(direction))*1e6:.2f} ppm"
+        )
+
         print(f"\nTRAVIS first point:")
         print(f"  Distance from antenna: {dist_to_tr_first:.6f} m")
-        print(f"  Actual direction: [{dir_tr_actual[0]:.6f}, {dir_tr_actual[1]:.6f}, {dir_tr_actual[2]:.6f}]")
-        print(f"  Direction error: {np.linalg.norm(dir_tr_actual - np.array(direction))*1e6:.2f} ppm")
-        
+        print(
+            f"  Actual direction: [{dir_tr_actual[0]:.6f}, {dir_tr_actual[1]:.6f}, {dir_tr_actual[2]:.6f}]"
+        )
+        print(
+            f"  Direction error: {np.linalg.norm(dir_tr_actual - np.array(direction))*1e6:.2f} ppm"
+        )
+
         print(f"\nDirection difference (raytrax - TRAVIS):")
         dir_diff = dir_rx_actual - dir_tr_actual
         print(f"  Δdir: [{dir_diff[0]:.8f}, {dir_diff[1]:.8f}, {dir_diff[2]:.8f}]")
         print(f"  |Δdir|: {np.linalg.norm(dir_diff)*1e6:.2f} ppm")
-        
+
         print(f"{'='*80}\n")
 
         print(f"\nOptical depth:")
