@@ -1,6 +1,7 @@
 """Integration test: W7-X ECRH absorption comparing raytrax with TRAVIS."""
 
 import numpy as np
+import jax
 import jax.numpy as jnp
 from pathlib import Path
 import sys
@@ -80,23 +81,25 @@ def travis_profile(rho, central_value, a, p, q, h, w):
 
 
 def find_b0_on_axis(wout):
-    """Find |B| on the magnetic axis at phi=0."""
+    """Find |B| on the magnetic axis at phi=0, z=0."""
     from raytrax.interpolate import (
         build_magnetic_field_interpolator,
         build_rho_interpolator,
     )
 
     eq_unscaled = get_interpolator_for_equilibrium(wout)
-    B_fn = build_magnetic_field_interpolator(eq_unscaled)
-    rho_fn = build_rho_interpolator(eq_unscaled)
+    B_interp = build_magnetic_field_interpolator(eq_unscaled)
+    rho_interp = build_rho_interpolator(eq_unscaled)
+
     # Scan R at phi=0, z=0 to find the axis (minimum rho)
+    # At phi=0, z=0: no stellarator symmetry transformation needed
     best_rho, best_B = 999.0, 0.0
     for R in np.arange(5.0, 6.5, 0.002):
-        pos = jnp.array([R, 0.0, 0.0])
-        rho_val = float(rho_fn(pos))
+        rho_val = float(rho_interp(R, 0.0, 0.0))
         if rho_val < best_rho:
             best_rho = rho_val
-            best_B = float(jnp.linalg.norm(B_fn(pos)))
+            B_grid = B_interp(R, 0.0, 0.0)
+            best_B = float(jnp.linalg.norm(B_grid))
     return best_B
 
 
@@ -217,7 +220,6 @@ def main():
     print("\n" + "=" * 80)
     print("Running raytrax...")
     print("=" * 80)
-
     result = trace(eq_interp, profiles, beam)
 
     s = np.asarray(result.beam_profile.arc_length)
@@ -258,7 +260,7 @@ def main():
             travis_result.arc_length_m[travis_lcms_idx:] - s_lcms_travis
         )
 
-        # Align TRAVIS arc length to match raytrax starting point (both at LCMS entry)
+        # Align TRAVIS arc length to match raytrax starting point
         s_travis_aligned = s_travis_from_lcms + s[0]
 
         # Find overlapping arc length region
@@ -388,7 +390,11 @@ def main():
             xyz_rx_first + np.array([0.010, 0, 0]),
         ]
         for i, xyz in enumerate(test_positions):
-            rho_val = float(rho_fn(jnp.array(xyz)))
+            # Convert to cylindrical coordinates for interpolator
+            r = float(np.sqrt(xyz[0] ** 2 + xyz[1] ** 2))
+            phi = float(np.arctan2(xyz[1], xyz[0]))
+            z = float(xyz[2])
+            rho_val = float(rho_fn(r, phi, z))
             dist = np.linalg.norm(xyz - xyz_rx_first) * 1000
             print(
                 f"  +{dist:.1f}mm in X: ρ={rho_val:.6f}, Δρ={rho_val-rho_rx_first:.6f}"
