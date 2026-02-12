@@ -9,9 +9,6 @@ import numpy as np
 from safetensors import safe_open
 from safetensors.numpy import load_file, save_file
 
-from .fourier import dvolume_drho as compute_dvolume_drho
-from .interpolate import cylindrical_grid_for_equilibrium
-
 T = TypeVar("T", bound="SafetensorsMixin")
 
 
@@ -167,75 +164,6 @@ class TracingResult:
 
     radial_profile: RadialProfile
     """The radial deposition profile."""
-
-
-@dataclass
-class MagneticConfiguration(SafetensorsMixin):
-    """Magnetic configuration and geometry on a cylindrical grid.
-
-    Contains the magnetic field B and normalized effective radius rho on a
-    3D cylindrical grid (r, phi, z), along with volume information for
-    computing deposition profiles.
-    """
-
-    rphiz: jt.Float[jax.Array, "npoints 3"]
-    """The (r, phi, z) coordinates of the points on the interpolation grid."""
-
-    magnetic_field: jt.Float[jax.Array, "npoints 3"]
-    """The magnetic field at each point on the interpolation grid."""
-
-    rho: jt.Float[jax.Array, "npoints"]
-    """The normalized effective minor radius at each point on the interpolation grid."""
-
-    nfp: int
-    """Number of field periods (toroidal periodicity)."""
-
-    stellarator_symmetric: bool
-    """Whether the configuration has stellarator symmetry."""
-
-    rho_1d: jt.Float[jax.Array, "nrho_1d"]
-    """1D radial grid for volume derivative."""
-
-    dvolume_drho: jt.Float[jax.Array, "nrho_1d"]
-    """Volume derivative dV/drho on the 1D radial grid."""
-
-    @classmethod
-    def from_vmec_wout(
-        cls,
-        equilibrium: WoutLike,
-        magnetic_field_scale: float = 1.0,
-    ) -> "MagneticConfiguration":
-        """Generate interpolators for the given MHD equilibrium.
-
-        Args:
-            equilibrium: an MHD equilibrium compatible with `vmecpp.VmecWOut`
-            magnetic_field_scale: Factor to multiply all magnetic field values by.
-
-        Returns:
-            A MagneticConfiguration object containing interpolation data.
-        """
-
-        # TODO add settings for grid resolution
-        interpolated_array = cylindrical_grid_for_equilibrium(
-            equilibrium=equilibrium, n_rho=40, n_theta=45, n_phi=50, n_r=45, n_z=55
-        )
-        rphiz = interpolated_array[..., :3]
-        rho = interpolated_array[..., 3]
-        magnetic_field = interpolated_array[..., 4:] * magnetic_field_scale
-
-        # Compute volume derivative on 1D radial grid
-        rho_1d = jnp.linspace(0, 1, 200)
-        dv_drho = compute_dvolume_drho(equilibrium, rho_1d)
-
-        return cls(
-            rphiz=rphiz,
-            magnetic_field=magnetic_field,
-            rho=rho,
-            nfp=equilibrium.nfp,
-            stellarator_symmetric=not equilibrium.lasym,
-            rho_1d=rho_1d,
-            dvolume_drho=dv_drho,
-        )
 
 
 @dataclass

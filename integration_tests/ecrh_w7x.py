@@ -12,7 +12,8 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 sys.path.insert(0, str(Path(__file__).parent.parent / "tests"))
 
 from raytrax.api import trace
-from raytrax.types import Beam, RadialProfiles, MagneticConfiguration
+from raytrax.interpolate import MagneticConfiguration
+from raytrax.types import Beam, RadialProfiles
 from raytrax.data import get_w7x_wout
 from travis_wrapper import run_travis, TravisECRHInput, save_reference_data
 

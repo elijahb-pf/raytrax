@@ -2,7 +2,7 @@ import jax
 import jax.numpy as jnp
 import numpy as np
 
-from raytrax.types import MagneticConfiguration
+from raytrax.interpolate import MagneticConfiguration
 from raytrax.fourier import evaluate_rphiz_on_toroidal_grid
 from raytrax.interpolate import (
     build_magnetic_field_interpolator,
@@ -480,8 +480,8 @@ def test_stellarator_symmetry_in_interpolators(w7x_wout):
 
 def test_extrapolation_in_cylindrical_grid(w7x_wout):
     """Test that the cylindrical grid properly handles extrapolation beyond LCMS."""
-    from raytrax.types import MagneticConfiguration
     from raytrax.interpolate import (
+        MagneticConfiguration,
         build_magnetic_field_interpolator,
         build_rho_interpolator,
     )

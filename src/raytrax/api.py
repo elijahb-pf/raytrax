@@ -7,6 +7,7 @@ from .interpolate import (
     build_rho_interpolator,
     build_electron_density_profile_interpolator,
     build_electron_temperature_profile_interpolator,
+    MagneticConfiguration,
 )
 from .ray import RaySetting
 from .solver import trace_jitted
@@ -14,7 +15,6 @@ from .types import (
     Beam,
     BeamProfile,
     Interpolators,
-    MagneticConfiguration,
     RadialProfile,
     RadialProfiles,
     TracingResult,

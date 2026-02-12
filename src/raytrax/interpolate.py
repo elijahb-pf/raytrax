@@ -6,90 +6,91 @@ field $B$ need to be extrapolated from toroidal coordinates ($\rho$, $\theta$, $
 to cylindrical coordinates ($r$, $\phi$, $z$).
 """
 
+from dataclasses import dataclass
+
+import interpax
 import jax
 import jax.numpy as jnp
 import jaxtyping as jt
 import numpy as np
-import interpax
-from typing import Callable
 from beartype import beartype as typechecker
 from scipy.interpolate import griddata
 
 from .fourier import (
+    dvolume_drho as compute_dvolume_drho,
     evaluate_magnetic_field_on_toroidal_grid,
     evaluate_rphiz_on_toroidal_grid,
 )
-from .types import WoutLike, MagneticConfiguration, RadialProfiles
+from .types import RadialProfiles, SafetensorsMixin, WoutLike
 
 
-def _map_to_fundamental_domain(
-    phi: jt.Float[jax.Array, ""],
-    z: jt.Float[jax.Array, ""],
-    nfp: int,
-) -> tuple[
-    jt.Float[jax.Array, ""],
-    jt.Float[jax.Array, ""],
-    jt.Bool[jax.Array, ""],
-]:
-    """Map toroidal angle and z to the fundamental domain [0, π/nfp] using stellarator symmetry.
+@dataclass
+class MagneticConfiguration(SafetensorsMixin):
+    """Magnetic configuration and geometry on a cylindrical grid.
 
-    For points in the second half of a field period (phi_mod > π/nfp), the stellarator
-    symmetry maps (R, phi, Z) to (R, phi_mapped, -Z), so z must also be reflected.
-
-    Args:
-        phi: Toroidal angle in radians (can be any value)
-        z: Cylindrical z coordinate
-        nfp: Number of field periods
-
-    Returns:
-        A tuple of (phi_mapped, z_query, in_second_half) where phi_mapped is in [0, π/nfp],
-        z_query is the z to use for the grid lookup, and in_second_half indicates whether
-        the original phi was in the second half of a field period.
+    Contains the magnetic field B and normalized effective radius rho on a
+    3D cylindrical grid (r, phi, z), along with volume information for
+    computing deposition profiles.
     """
-    period = 2.0 * jnp.pi / nfp
-    half_period = jnp.pi / nfp
-    phi_mod = phi % period
-    in_second_half = phi_mod > half_period
-    phi_mapped = jnp.where(in_second_half, period - phi_mod, phi_mod)
-    z_query = jnp.where(in_second_half, -z, z)
-    return phi_mapped, z_query, in_second_half
 
+    rphiz: jt.Float[jax.Array, "npoints 3"]
+    """The (r, phi, z) coordinates of the points on the interpolation grid."""
 
-def _apply_B_stellarator_symmetry(
-    B_grid: jt.Float[jax.Array, "3"],
-    phi_mapped: jt.Float[jax.Array, ""],
-    phi: jt.Float[jax.Array, ""],
-    in_second_half: jt.Bool[jax.Array, ""],
-) -> jt.Float[jax.Array, "3"]:
-    """Apply stellarator symmetry transformation to a Cartesian B field vector.
+    magnetic_field: jt.Float[jax.Array, "npoints 3"]
+    """The magnetic field at each point on the interpolation grid."""
 
-    When phi is in the second half of a field period, the grid was queried at the
-    mirror point (phi_mapped, -z). This function applies the correct physical
-    transformation to recover B at the actual query point (phi, z).
+    rho: jt.Float[jax.Array, "npoints"]
+    """The normalized effective minor radius at each point on the interpolation grid."""
 
-    Under stellarator symmetry, B_R is odd (changes sign) while B_phi and B_Z
-    are even (unchanged) when reflecting across the period boundary.
+    nfp: int
+    """Number of field periods (toroidal periodicity)."""
 
-    Args:
-        B_grid: Cartesian B vector from the grid at the mirror point
-        phi_mapped: The mapped phi used for the grid lookup
-        phi: The actual toroidal angle of the query point
-        in_second_half: Whether the query phi is in the second half of a field period
+    stellarator_symmetric: bool
+    """Whether the configuration has stellarator symmetry."""
 
-    Returns:
-        Cartesian B vector at the actual query position
-    """
-    cp_m = jnp.cos(phi_mapped)
-    sp_m = jnp.sin(phi_mapped)
-    BR_m = B_grid[0] * cp_m + B_grid[1] * sp_m
-    Bphi_m = -B_grid[0] * sp_m + B_grid[1] * cp_m
-    BZ_m = B_grid[2]
-    # B_R is odd under the symmetry (changes sign), B_phi and B_Z are even
-    sign = jnp.where(in_second_half, -1.0, 1.0)
-    BR_q = sign * BR_m
-    cp_q = jnp.cos(phi)
-    sp_q = jnp.sin(phi)
-    return jnp.stack([BR_q * cp_q - Bphi_m * sp_q, BR_q * sp_q + Bphi_m * cp_q, BZ_m])
+    rho_1d: jt.Float[jax.Array, "nrho_1d"]
+    """1D radial grid for volume derivative."""
+
+    dvolume_drho: jt.Float[jax.Array, "nrho_1d"]
+    """Volume derivative dV/drho on the 1D radial grid."""
+
+    @classmethod
+    def from_vmec_wout(
+        cls,
+        equilibrium: WoutLike,
+        magnetic_field_scale: float = 1.0,
+    ) -> MagneticConfiguration:
+        """Generate interpolators for the given MHD equilibrium.
+
+        Args:
+            equilibrium: an MHD equilibrium compatible with `vmecpp.VmecWOut`
+            magnetic_field_scale: Factor to multiply all magnetic field values by.
+
+        Returns:
+            A MagneticConfiguration object containing interpolation data.
+        """
+
+        # TODO add settings for grid resolution
+        interpolated_array = cylindrical_grid_for_equilibrium(
+            equilibrium=equilibrium, n_rho=40, n_theta=45, n_phi=50, n_r=45, n_z=55
+        )
+        rphiz = interpolated_array[..., :3]
+        rho = interpolated_array[..., 3]
+        magnetic_field = interpolated_array[..., 4:] * magnetic_field_scale
+
+        # Compute volume derivative on 1D radial grid
+        rho_1d = jnp.linspace(0, 1, 200)
+        dv_drho = compute_dvolume_drho(equilibrium, rho_1d)
+
+        return cls(
+            rphiz=rphiz,
+            magnetic_field=magnetic_field,
+            rho=rho,
+            nfp=equilibrium.nfp,
+            stellarator_symmetric=not equilibrium.lasym,
+            rho_1d=rho_1d,
+            dvolume_drho=dv_drho,
+        )
 
 
 @jt.jaxtyped(typechecker=typechecker)
@@ -113,7 +114,7 @@ def interpolate_toroidal_to_cylindrical_grid(
     The values of the quantities interpolated to the cylindrical grid as a JAX
     array.
     """
-    (n_r, n_z, _) = rz_cylindrical.shape
+    n_r, n_z, _ = rz_cylindrical.shape
     n_values = value_toroidal.shape[-1]
     values = []
     phis = rphiz_toroidal[0, 0, :, 1]
