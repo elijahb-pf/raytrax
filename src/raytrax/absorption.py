@@ -3,14 +3,11 @@ from typing import Literal
 import jax
 import jax.numpy as jnp
 import jaxtyping as jt
+from scipy.constants import c as speed_of_light
+
 from raytrax import bessel
 from raytrax import dielectric_tensor as dielectric_tensor_module
-from raytrax import (
-    distribution_function,
-    polarization,
-    power_flux,
-    quantities,
-)
+from raytrax import distribution_function, polarization, power_flux, quantities
 
 ScalarFloat = float | jt.Float[jax.Array, " "]
 ScalarInt = int | jt.Int[jax.Array, " "]
@@ -159,7 +156,6 @@ def absorption_coefficient(
     #   alpha = -omega*Xp*sqrt(mu/(2*pi))/c * resonance_integral / |F|
     #
     # The resonance_integral < 0 for absorption, giving alpha > 0.
-    from scipy.constants import c as speed_of_light
 
     omega = 2 * jnp.pi * frequency
     Xp = (plasma_frequency / frequency) ** 2

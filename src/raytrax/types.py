@@ -1,9 +1,18 @@
-from dataclasses import dataclass, field
-from typing import Literal, Protocol, runtime_checkable, Callable
+from dataclasses import dataclass, fields
+from typing import Any, Literal, Protocol, TypeVar, runtime_checkable
 
 import interpax
 import jax
+import jax.numpy as jnp
 import jaxtyping as jt
+import numpy as np
+from safetensors import safe_open
+from safetensors.numpy import load_file, save_file
+
+from .fourier import dvolume_drho as compute_dvolume_drho
+from .interpolate import cylindrical_grid_for_equilibrium
+
+T = TypeVar("T", bound="SafetensorsMixin")
 
 
 class SafetensorsMixin:
@@ -15,15 +24,12 @@ class SafetensorsMixin:
         Args:
             path: Path to save to (should end in .safetensors)
         """
-        from dataclasses import fields
-        from safetensors.numpy import save_file
-        import numpy as np
 
         # Separate arrays from scalars
         tensors = {}
         metadata = {}
 
-        for field in fields(self):
+        for field in fields(self):  # type: ignore[arg-type]
             value = getattr(self, field.name)
             if isinstance(value, jax.Array):
                 # Convert JAX arrays to numpy (zero-copy on CPU)
@@ -35,7 +41,7 @@ class SafetensorsMixin:
         save_file(tensors, path, metadata=metadata)
 
     @classmethod
-    def load(cls, path: str):
+    def load(cls: type[T], path: str) -> T:
         """Load dataclass from a safetensors file.
 
         Args:
@@ -44,10 +50,6 @@ class SafetensorsMixin:
         Returns:
             Loaded instance of the dataclass
         """
-        from dataclasses import fields
-        from safetensors.numpy import load_file
-        from safetensors import safe_open
-        import jax.numpy as jnp
 
         # Load tensors and metadata
         tensors = load_file(path)
@@ -56,8 +58,8 @@ class SafetensorsMixin:
             metadata = f.metadata() or {}
 
         # Reconstruct all fields
-        field_values = {}
-        for field in fields(cls):
+        field_values: dict[str, Any] = {}
+        for field in fields(cls):  # type: ignore[arg-type]
             if field.name in tensors:
                 # It's an array - convert back to JAX
                 field_values[field.name] = jnp.array(tensors[field.name])
@@ -212,9 +214,6 @@ class MagneticConfiguration(SafetensorsMixin):
         Returns:
             A MagneticConfiguration object containing interpolation data.
         """
-        from .fourier import dvolume_drho as compute_dvolume_drho
-        from .interpolate import cylindrical_grid_for_equilibrium
-        import jax.numpy as jnp
 
         # TODO add settings for grid resolution
         interpolated_array = cylindrical_grid_for_equilibrium(

@@ -14,7 +14,7 @@ from raytrax.types import Interpolators
 
 def _y_to_state(
     y: jt.Float[jax.Array, " n "],
-    s: float,
+    s: float | int | jax.Array,
 ) -> ray.RayState:
     """Extract RayState from the 7-component ODE state vector.
 
@@ -32,7 +32,7 @@ def _y_to_state(
 
 
 def _right_hand_side(
-    s: float,
+    s: float | int | jax.Array,
     y: jt.Float[jax.Array, " n "],
     args: tuple,
 ) -> jt.Float[jax.Array, " n "]:
@@ -184,7 +184,7 @@ _event = diffrax.Event(
     direction=[True, False, False],
 )
 
-_term = diffrax.ODETerm(_right_hand_side)
+_term = diffrax.ODETerm(_right_hand_side)  # type: ignore[arg-type]
 _solver = diffrax.Tsit5()
 _stepsize_controller = diffrax.PIDController(rtol=1e-4, atol=1e-6, dtmax=0.05)
 _saveat = diffrax.SaveAt(steps=True, t0=True)
