@@ -4,7 +4,9 @@ site_url = "https://proximafusion.github.io/raytrax/"
 docs_dir = "docs"
 nav = [
     {"Home" = "index.md"},
-    {"Get Started" = "getting-started.md"},
+    {"Usage" = [
+        {"Get Started" = "getting-started.md"},
+    ]},
     {"Theory" = [
         {"Overview" = "theory.md"},
         {"Ray Tracing" = "theory/ray-tracing.md"},
