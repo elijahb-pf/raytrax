@@ -20,25 +20,31 @@ The most relevant quantities describing wave propagation in the plasma are:
 - **$\boldsymbol{n}(\boldsymbol{r})$**: Vectorial index of refraction, defined as $\boldsymbol{n} = (c/\omega) \boldsymbol{k}$ with magnitude $n = |\boldsymbol{n}|$
 - **$\alpha$**: Absorption coefficient, given by $\alpha = 2\,\text{Im}(\boldsymbol{k} \cdot \hat{\boldsymbol{s}}) = 2 k_i$, leading to exponential decay $e^{-\alpha s}$ of the wave amplitude along the ray
 
+See [absorption](theory/absorption.md) for more details on the absorption coefficient and how it is computed from the plasma parameters.
+
 ## Dispersion Relation
 
-The plasma response to the electromagnetic wave is described by the complex dielectric tensor $\boldsymbol{\varepsilon}(\boldsymbol{r}, \omega)$, which depends on the local magnetic field $\boldsymbol{B}$, electron density $n_e$, and temperature $T$. From Maxwell's equations, the wave equation in the frequency domain is:
+Treating the plasma as a dielectric medium which is homogeneous (in a volume that is large compared to the wavelength), but *anisotropic* due to the presence of a strong external magnetic field $\boldsymbol{B}_0$, the plasma response to the electromagnetic wave is described by the complex dielectric tensor $\boldsymbol{\varepsilon_r}$, 
 
-$$\nabla \times (\nabla \times \boldsymbol{E}) + \frac{\omega^2}{c^2} \boldsymbol{\varepsilon} \cdot \boldsymbol{E} = 0$$
+$$\boldsymbol{D}=\varepsilon_0 \boldsymbol{\varepsilon_r}\boldsymbol{E}$$
+
+and Maxwell's equations read $\nabla\times\boldsymbol{E}= -\frac{\partial \boldsymbol{B}}{\partial t}$ and $\nabla\times\boldsymbol{H}= \frac{\partial \boldsymbol{D}}{\partial t}$ in the absence of free currents. From this, the wave equation in the frequency domain becomes:
+
+$$\nabla \times (\nabla \times \boldsymbol{E}) + \frac{\omega^2}{c^2} \boldsymbol{\varepsilon_r} \cdot \boldsymbol{E} = 0$$
 
 Substituting the eikonal ansatz in the locally homogeneous approximation and retaining leading-order terms yields an eigenvalue problem for the wave field:
 
-$$\boldsymbol{D} \cdot \boldsymbol{E}_0 = 0$$
+$$\boldsymbol{\mathsf{D}} \cdot \boldsymbol{E}_0 = 0$$
 
-Here, $\boldsymbol{D}$ is the dispersion tensor:
+Here, $\boldsymbol{\mathsf{D}}$ (not to be confused with $\boldsymbol{D}$) is the dispersion tensor:
 
-$$\boldsymbol{D} = \boldsymbol{\varepsilon} - n^2 \boldsymbol{I} + \boldsymbol{n}\boldsymbol{n}$$
+$$\boldsymbol{\mathsf{D}} = \boldsymbol{\varepsilon_r} - n^2 \boldsymbol{I} + \boldsymbol{n}\boldsymbol{n}$$
 
 where $\boldsymbol{I}$ is the identity tensor and $\boldsymbol{n}\boldsymbol{n}$ is the dyadic product. For a nontrivial wave field to exist, the determinant must vanish:
 
-$$\det \boldsymbol{D} = 0$$
+$$\det \boldsymbol{\mathsf{D}} = 0$$
 
-This dispersion relation connects the wave vector $\boldsymbol{k}$ to the frequency $\omega$ and the local plasma parameters through $\boldsymbol{\varepsilon}(\boldsymbol{B}, n_e, T)$. See [ray tracing](theory/ray-tracing.md) for how this dispersion relation is used to derive the ray equations.
+This dispersion relation connects the wave vector $\boldsymbol{k}$ to the frequency $\omega$ and the local plasma parameters through $\boldsymbol{\varepsilon_r}(\boldsymbol{B}, n_e, T)$. See [ray tracing](theory/ray-tracing.md) for how this dispersion relation is used to derive the ray equations.
 
 ## Raytrax Inputs and Outputs
 

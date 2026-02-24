@@ -60,7 +60,7 @@ def absorption_coefficient(
     frequency: ScalarFloat,
     mode: Literal["X", "O"],
 ) -> ScalarFloat:
-    """Compute the absorption coefficient.
+    r"""Compute the absorption coefficient $\alpha$.
 
     Args:
         refractive_index: Refractive index vector in the lab system.
@@ -71,7 +71,7 @@ def absorption_coefficient(
         mode: Polarization mode, either "X" for extraordinary or "O" for ordinary.
 
     Returns:
-        Absorption coefficient alpha in m^-1.
+        Absorption coefficient $\alpha$ in 1/m.
     """
     cyclotron_frequency = quantities.electron_cyclotron_frequency(
         magnetic_field_strength=jnp.linalg.norm(magnetic_field)
