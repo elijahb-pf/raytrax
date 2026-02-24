@@ -4,7 +4,7 @@ import pytest
 
 from raytrax.plot.plot3d import plot_flux_surface_3d
 
-from ..fixtures import w7x_magnetic_configuration
+from ..fixtures import w7x_magnetic_configuration, w7x_wout
 
 pytest.importorskip("pyvista")
 
