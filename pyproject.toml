@@ -7,7 +7,7 @@ where = ["src"]
 include = ["raytrax*"]
 
 [tool.setuptools.package-data]
-raytrax = ["data/w7x.json"]
+raytrax = ["equilibrium/data/w7x.json"]
 
 [project]
 name = "raytrax"
