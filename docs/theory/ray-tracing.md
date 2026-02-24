@@ -6,11 +6,11 @@ icon: lucide/spline
 
 ## Ray Tracing Equations
 
-As introduced in [Theory](../theory.md), the local wave vector $\boldsymbol{k}$ satisfies the dispersion relation $\det \boldsymbol{D} = 0$.
+As introduced in [Theory](../theory.md), the local wave vector $\boldsymbol{k}$ satisfies the dispersion relation $\det \boldsymbol{\mathsf{D}} = 0$.
 
 For ray tracing, we define a Hamiltonian $\mathcal H(\boldsymbol{r}, \boldsymbol{k})$ as the real part of the dispersion relation determinant (or a scalar function proportional to it), assuming that the anti-Hermitian part of the dielectric tensor (representing absorption) is small (weak damping approximation):
 
-$$ \mathcal H(\boldsymbol{r}, \boldsymbol{k}) = \text{Re}(\det \boldsymbol{D}) = 0 $$
+$$ \mathcal H(\boldsymbol{r}, \boldsymbol{k}) = \text{Re}(\det \boldsymbol{\mathsf{D}}) = 0 $$
 
 The ray equations can then be derived from Hamilton's equations in terms of a time-like parameter $\tau$ along the ray:
 
@@ -60,9 +60,9 @@ Here, the Stix parameters $S$, $D$, and $P$ are defined in terms of the standard
 - $D = \frac{XY}{1-Y^2}$
 - $P = 1 - X$
 
-Returning to the dispersion tensor $\boldsymbol{D} = \boldsymbol{\varepsilon} - n^2 \boldsymbol{I} + \boldsymbol{n}\boldsymbol{n}$, we assume the wave vector $\boldsymbol{n}$ lies in the $x$-$z$ plane at an angle $\theta$ to the background magnetic field, such that $\boldsymbol{n} = (n \sin \theta, 0, n \cos \theta)$.
+Returning to the dispersion tensor $\boldsymbol{\mathsf{D}} = \boldsymbol{\varepsilon} - n^2 \boldsymbol{I} + \boldsymbol{n}\boldsymbol{n}$, we assume the wave vector $\boldsymbol{n}$ lies in the $x$-$z$ plane at an angle $\theta$ to the background magnetic field, such that $\boldsymbol{n} = (n \sin \theta, 0, n \cos \theta)$.
 
-Substituting $\boldsymbol{\varepsilon}$ into $\boldsymbol{D}$ and enforcing the non-trivial solution condition $\det \boldsymbol{D} = 0$ yields a quadratic equation in $n^2$. Solving it gives the Appleton-Hartree dispersion relation, which expresses the refractive index as a function of the propagation angle $\theta$ and plasma parameters:
+Substituting $\boldsymbol{\varepsilon}$ into $\boldsymbol{\mathsf{D}}$ and enforcing the non-trivial solution condition $\det \boldsymbol{\mathsf{D}} = 0$ yields a quadratic equation in $n^2$. Solving it gives the Appleton-Hartree dispersion relation, which expresses the refractive index as a function of the propagation angle $\theta$ and plasma parameters:
 
 $$n_{AH}^2 = 1 - \frac{X}{1 - \frac{Y^2 \sin^2 \theta}{2(1-X)} \pm \sqrt{\left(\frac{Y^2 \sin^2 \theta}{2(1-X)}\right)^2 + Y^2 \cos^2 \theta}}$$
 

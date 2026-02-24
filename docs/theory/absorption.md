@@ -20,6 +20,7 @@ $$\langle \nabla \cdot \boldsymbol{S} \rangle = -\frac{\varepsilon_0 \omega}{2} 
 Splitting the relative dielectric tensor into its Hermitian and anti-Hermitian parts, $\boldsymbol{\varepsilon_r}=\boldsymbol{\varepsilon}_r^H + i \boldsymbol{\varepsilon}_r^A$, where
 
 $$\boldsymbol{\varepsilon}_{r}^H = \frac{1}{2}(\boldsymbol{\varepsilon}_{r} + \boldsymbol{\varepsilon}_{r}^\dagger),$$
+
 $$\boldsymbol{\varepsilon}_{r}^A = \frac{1}{2i}(\boldsymbol{\varepsilon}_{r} - \boldsymbol{\varepsilon}_{r}^\dagger),$$
 
  the time-averaged power loss density (units W/m³) becomes
