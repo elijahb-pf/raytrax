@@ -19,6 +19,7 @@ from .types import (
     Interpolators,
     RadialProfile,
     RadialProfiles,
+    TraceBuffers,
     TraceResult,
 )
 
@@ -56,23 +57,13 @@ def _bin_power_deposition(
     return power_per_bin / dV
 
 
-def trace(
+def _run_trace(
     magnetic_configuration: MagneticConfiguration,
     radial_profiles: RadialProfiles,
     beam: Beam,
-) -> TraceResult:
-    """Trace a single beam through the plasma.
-
-    Args:
-        magnetic_configuration: Magnetic configuration with gridded data
-        radial_profiles: Radial profiles of plasma parameters
-        beam: Beam initial conditions (position, direction, frequency, mode)
-
-    Returns:
-        TraceResult with beam profile and radial deposition profile.
-    """
+) -> tuple[TraceBuffers, jax.Array]:
+    """Build interpolators and run the JIT-compiled ODE solve."""
     setting = RaySetting(frequency=beam.frequency, mode=beam.mode)
-
     interpolators = Interpolators(
         magnetic_field=build_magnetic_field_interpolator(magnetic_configuration),
         rho=build_rho_interpolator(magnetic_configuration),
@@ -82,8 +73,7 @@ def trace(
         ),
         is_axisymmetric=magnetic_configuration.is_axisymmetric,
     )
-
-    result = trace_jitted(
+    return trace_jitted(
         jnp.asarray(beam.position),
         jnp.asarray(beam.direction),
         setting,
@@ -93,40 +83,69 @@ def trace(
         magnetic_configuration.dvolume_drho,
     )
 
-    # Trim padded buffer to valid entries
-    n = int(jnp.sum(jnp.isfinite(result.arc_length)).item())
 
-    # Prepend antenna position as first point (with zero values)
-    antenna_position = jnp.asarray(beam.position).reshape(1, 3)
-    antenna_direction = jnp.asarray(beam.direction).reshape(1, 3)
-    zero_scalar = jnp.zeros(1)
-    zero_vector = jnp.zeros((1, 3))
+def trace(
+    magnetic_configuration: MagneticConfiguration,
+    radial_profiles: RadialProfiles,
+    beam: Beam,
+    trim: bool = True,
+) -> TraceResult:
+    """Trace a single beam through the plasma.
+
+    Args:
+        magnetic_configuration: Magnetic configuration with gridded data
+        radial_profiles: Radial profiles of plasma parameters
+        beam: Beam initial conditions (position, direction, frequency, mode)
+        trim: If True (default), trim the output to the valid trajectory length.
+            Set trim=False for gradient-based optimization. The returned
+            BeamProfile then contains padded arrays (4097 slots) that are fully
+            differentiable w.r.t. beam.position and beam.direction. Padded
+            entries have linear_power_density=0 and optical_depth equal to the
+            final value, so loss functions like::
+
+                jnp.max(result.beam_profile.optical_depth)
+                jnp.sum(result.beam_profile.linear_power_density * weights)
+
+            give the correct answer without trimming. radial_profile is None
+            when trim=False.
+
+    Returns:
+        TraceResult with beam profile and (if trim=True) radial deposition
+        profile.
+    """
+    result, num_accepted_steps = _run_trace(
+        magnetic_configuration, radial_profiles, beam
+    )
+
+    if not trim:
+        beam_profile = BeamProfile(
+            position=result.ode_state[:, :3],
+            arc_length=result.arc_length,
+            refractive_index=result.ode_state[:, 3:6],
+            optical_depth=result.ode_state[:, 6],
+            absorption_coefficient=result.absorption_coefficient,
+            electron_density=result.electron_density,
+            electron_temperature=result.electron_temperature,
+            magnetic_field=result.magnetic_field,
+            normalized_effective_radius=result.normalized_effective_radius,
+            linear_power_density=result.linear_power_density,
+        )
+        return TraceResult(beam_profile=beam_profile, radial_profile=None)
+
+    # Slot 0 is the antenna position (SaveAt t0=True); accepted steps follow.
+    n = num_accepted_steps.item() + 1
 
     beam_profile = BeamProfile(
-        position=jnp.concatenate([antenna_position, result.ode_state[:n, :3]], axis=0),
-        arc_length=jnp.concatenate([zero_scalar, result.arc_length[:n]], axis=0),
-        refractive_index=jnp.concatenate(
-            [antenna_direction, result.ode_state[:n, 3:6]], axis=0
-        ),
-        optical_depth=jnp.concatenate([zero_scalar, result.ode_state[:n, 6]], axis=0),
-        absorption_coefficient=jnp.concatenate(
-            [zero_scalar, result.absorption_coefficient[:n]], axis=0
-        ),
-        electron_density=jnp.concatenate(
-            [zero_scalar, result.electron_density[:n]], axis=0
-        ),
-        electron_temperature=jnp.concatenate(
-            [zero_scalar, result.electron_temperature[:n]], axis=0
-        ),
-        magnetic_field=jnp.concatenate(
-            [zero_vector, result.magnetic_field[:n]], axis=0
-        ),
-        normalized_effective_radius=jnp.concatenate(
-            [jnp.array([jnp.nan]), result.normalized_effective_radius[:n]], axis=0
-        ),
-        linear_power_density=jnp.concatenate(
-            [zero_scalar, result.linear_power_density[:n]], axis=0
-        ),
+        position=result.ode_state[:n, :3],
+        arc_length=result.arc_length[:n],
+        refractive_index=result.ode_state[:n, 3:6],
+        optical_depth=result.ode_state[:n, 6],
+        absorption_coefficient=result.absorption_coefficient[:n],
+        electron_density=result.electron_density[:n],
+        electron_temperature=result.electron_temperature[:n],
+        magnetic_field=result.magnetic_field[:n],
+        normalized_effective_radius=result.normalized_effective_radius[:n],
+        linear_power_density=result.linear_power_density[:n],
     )
 
     power_binned = _bin_power_deposition(

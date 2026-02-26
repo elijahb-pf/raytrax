@@ -72,7 +72,7 @@ def test_ray_tracing():
     rho_1d = jnp.linspace(0, 1, 50)
     dvolume_drho = jnp.ones(50)
 
-    result = solver.trace_jitted(
+    result, num_accepted_steps = solver.trace_jitted(
         position,
         direction,
         setting,
@@ -82,7 +82,7 @@ def test_ray_tracing():
         dvolume_drho,
     )
 
-    n = int(jnp.sum(jnp.isfinite(result.arc_length)).item())
+    n = num_accepted_steps.item() + 1
     assert n > 0
     assert result.ode_state.shape[1] == 7
 
@@ -100,7 +100,7 @@ def test_quantities_computed_during_solve():
     rho_1d = jnp.linspace(0, 1, 50)
     dvolume_drho = jnp.ones(50)
 
-    result = solver.trace_jitted(
+    result, num_accepted_steps = solver.trace_jitted(
         position,
         direction,
         setting,
@@ -110,7 +110,7 @@ def test_quantities_computed_during_solve():
         dvolume_drho,
     )
 
-    n = int(jnp.sum(jnp.isfinite(result.arc_length)).item())
+    n = num_accepted_steps.item() + 1
     assert n > 0
 
     # Check first valid point has expected values from mock interpolators

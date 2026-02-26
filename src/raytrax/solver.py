@@ -188,51 +188,6 @@ def _right_hand_side(
     return jnp.concatenate([dr_ds, dn_ds, jnp.array([dtau_ds])])
 
 
-def _straight_line_trace(
-    position: jt.Float[jax.Array, "3"],
-    direction: jt.Float[jax.Array, "3"],
-    interpolators: Interpolators,
-    nfp: int,
-    step_size: float = 0.01,
-    max_steps: int = 100,
-) -> tuple[jt.Float[jax.Array, "3"], jt.Float[jax.Array, ""]]:
-    """Trace a straight line until finding a position inside the plasma.
-
-    Takes small steps in the given direction until both the magnetic field
-    magnitude is positive and rho <= 1, or until max_steps is reached.
-    """
-
-    # Check if we're already at a valid position
-    initial_B = _eval_magnetic_field(position, interpolators, nfp)
-    initial_rho = _eval_rho(position, interpolators, nfp)
-    initial_valid = jnp.logical_and(jnp.linalg.norm(initial_B) > 0, initial_rho <= 1.0)
-
-    def cond_fun(state_tuple):
-        pos, step_count, found_valid = state_tuple
-        return jnp.logical_and(jnp.logical_not(found_valid), step_count < max_steps)
-
-    def body_fun(state_tuple):
-        pos, step_count, found_valid = state_tuple
-        new_pos = pos + step_size * direction
-
-        B = _eval_magnetic_field(new_pos, interpolators, nfp)
-        rho = _eval_rho(new_pos, interpolators, nfp)
-        new_found_valid = jnp.logical_and(jnp.linalg.norm(B) > 0, rho <= 1.0)
-
-        return (new_pos, step_count + 1, new_found_valid)
-
-    initial_state_tuple = (position, 0, initial_valid)
-    final_position, step_count, found_valid = jax.lax.while_loop(
-        cond_fun, body_fun, initial_state_tuple
-    )
-
-    distance_traveled = step_count * step_size
-
-    final_pos = jnp.where(found_valid, final_position, position)
-    final_dist = jnp.where(found_valid, distance_traveled, 0.0)
-    return final_pos, final_dist
-
-
 def _cond_exit(t, y, args, **kwargs):
     """Terminate when ray exits plasma (rho > 1.05)."""
     return _eval_rho(y[:3], args[1], args[2]) - 1.05
@@ -257,6 +212,36 @@ _term = diffrax.ODETerm(_right_hand_side)  # type: ignore[arg-type]
 _solver = diffrax.Tsit5()
 _stepsize_controller = diffrax.PIDController(rtol=1e-4, atol=1e-6, dtmax=0.05)
 _saveat = diffrax.SaveAt(steps=True, t0=True)
+
+
+def _solve(
+    position: jt.Float[jax.Array, "3"],
+    direction: jt.Float[jax.Array, "3"],
+    setting: ray.RaySetting,
+    interpolators: Interpolators,
+    nfp: int,
+) -> diffrax.Solution:
+    """Core ODE solve shared by trace_jitted and absorbed_fraction_jitted.
+
+    Starts from `position` directly. The vacuum region (ne=0, rho>1) is handled
+    automatically: the Hamiltonian switches to _hamiltonian_vacuum when ne<1e-6,
+    giving straight-line propagation until the beam enters plasma.
+    """
+    y0 = jnp.concatenate([position, direction, jnp.array([0.0])])
+    return diffrax.diffeqsolve(
+        terms=_term,
+        solver=_solver,
+        t0=0.0,
+        t1=20.0,
+        dt0=0.001,
+        y0=y0,
+        args=(setting, interpolators, nfp),
+        saveat=_saveat,
+        stepsize_controller=_stepsize_controller,
+        event=_event,
+        max_steps=4096,
+        throw=False,
+    )
 
 
 class _BeamDiagnostics(NamedTuple):
@@ -332,57 +317,34 @@ def trace_jitted(
     nfp: int,
     rho_1d: jt.Float[jax.Array, " nrho"],
     dvolume_drho: jt.Float[jax.Array, " nrho"],
-) -> TraceBuffers:
-    """Fully JIT-compiled ray trace: vacuum propagation + ODE solve + diagnostics + radial profile.
+) -> tuple[TraceBuffers, jax.Array]:
+    """Fully JIT-compiled ray trace: ODE solve + diagnostics + radial profile.
 
-    Returns fixed-size arrays (padded to max_steps=4096). Invalid entries beyond the
-    last integration step are inf/NaN and must be trimmed by the caller.
+    Returns (TraceBuffers, num_accepted_steps). TraceBuffers arrays are padded to
+    max_steps=4096; slot 0 is the antenna position (t0 save). The caller trims to
+    num_accepted_steps + 1 valid entries.
     """
-    # 1. Straight-line trace to plasma entry
-    entry_pos, vacuum_dist = _straight_line_trace(
-        position,
-        direction,
-        interpolators,
-        nfp,
-    )
-
-    # 2. Build ODE initial state
-    y0 = jnp.concatenate([entry_pos, direction, jnp.array([0.0])])
-    t_start = vacuum_dist
-    t_end = t_start + 20.0
-    args = (setting, interpolators, nfp)
-
-    # 3. ODE solve
-    sol = diffrax.diffeqsolve(
-        terms=_term,
-        solver=_solver,
-        t0=t_start,
-        t1=t_end,
-        dt0=0.001,
-        y0=y0,
-        args=args,
-        saveat=_saveat,
-        stepsize_controller=_stepsize_controller,
-        event=_event,
-        max_steps=4096,
-        throw=False,
-    )
-    # 3. Post-processing: plasma diagnostics along trajectory
-    diag = _compute_beam_diagnostics(sol.ts, sol.ys, interpolators, nfp)
-
-    # 4. Radial deposition profile
+    sol = _solve(position, direction, setting, interpolators, nfp)
+    # sol.ts and sol.ys are Array | None in diffrax's type stubs (diffrax can't
+    # statically see SaveAt(steps=True, t0=True)), but we always use that SaveAt,
+    # so they are always arrays here.
+    ts = cast(jax.Array, sol.ts)
+    ys = cast(jax.Array, sol.ys)
+    diag = _compute_beam_diagnostics(ts, ys, interpolators, nfp)
     dP_dV = _compute_radial_profile(
-        sol.ts, diag.rho, diag.linear_power_density, rho_1d, dvolume_drho
+        ts, diag.rho, diag.linear_power_density, rho_1d, dvolume_drho
     )
-
-    return TraceBuffers(
-        arc_length=sol.ts,
-        ode_state=sol.ys,
-        magnetic_field=diag.magnetic_field,
-        normalized_effective_radius=diag.rho,
-        electron_density=diag.electron_density,
-        electron_temperature=diag.electron_temperature,
-        absorption_coefficient=diag.absorption_coefficient,
-        linear_power_density=diag.linear_power_density,
-        volumetric_power_density=dP_dV,
+    return (
+        TraceBuffers(
+            arc_length=ts,
+            ode_state=ys,
+            magnetic_field=diag.magnetic_field,
+            normalized_effective_radius=diag.rho,
+            electron_density=diag.electron_density,
+            electron_temperature=diag.electron_temperature,
+            absorption_coefficient=diag.absorption_coefficient,
+            linear_power_density=diag.linear_power_density,
+            volumetric_power_density=dP_dV,
+        ),
+        sol.stats["num_accepted_steps"],
     )
