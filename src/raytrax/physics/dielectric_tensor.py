@@ -70,6 +70,9 @@ def weakly_relativistic_dielectric_tensor(
     D = jnp.zeros((3, 3), dtype=jnp.complex128)
     n_par = refractive_index_para
     lam = (n_par * w / w_c) ** 2 / mu
+    # lam*mu = (n_par*w/w_c)², so sqrt(lam*mu) = |n_par|*w/w_c exactly.
+    # jnp.abs avoids sqrt'(0)=Inf at n_par=0 (which causes 0*Inf=NaN in adjoint).
+    sqrt_lam_mu = jnp.abs(n_par) * w / w_c
 
     # computing the Shkarofsky functions F_{q+1/2} at s=0 for all k required
     Fq = {}
@@ -95,7 +98,7 @@ def weakly_relativistic_dielectric_tensor(
         # D_22
         D = D.at[1, 1].set(-mu * b_0k_lam * Q_h0)
         # D_23
-        D = D.at[1, 2].set(1j * jnp.sqrt(mu * lam) * k * a_0k_lam * Q_h1)
+        D = D.at[1, 2].set(1j * sqrt_lam_mu * k * a_0k_lam * Q_h1)
         # D_33
         D = D.at[2, 2].add(-mu * lam * a_0k_lam * Q_h2)
 
@@ -132,12 +135,10 @@ def weakly_relativistic_dielectric_tensor(
             # sign error in Travis?
             D = D.at[0, 1].add(-1j * s * (s + k) * a_sk_lam * (Q_h0_s - Q_h0_minus_s))
             D = D.at[1, 1].add(b_sk_lam * (Q_h0_s + Q_h0_minus_s))
-            D = D.at[0, 2].add(
-                jnp.sqrt(lam * mu) * s * a_sk_lam * (Q_h1_s - Q_h1_minus_s)
-            )
+            D = D.at[0, 2].add(sqrt_lam_mu * s * a_sk_lam * (Q_h1_s - Q_h1_minus_s))
             # sign error in Travis?
             D = D.at[1, 2].add(
-                1j * jnp.sqrt(lam * mu) * (s + k) * a_sk_lam * (Q_h1_s + Q_h1_minus_s)
+                1j * sqrt_lam_mu * (s + k) * a_sk_lam * (Q_h1_s + Q_h1_minus_s)
             )
             D = D.at[2, 2].add(lam * mu * a_sk_lam * (Q_h2_s + Q_h2_minus_s))
 

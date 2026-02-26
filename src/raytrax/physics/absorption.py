@@ -38,13 +38,19 @@ def absorption_coefficient_conditional(
     """
     temperature_condition = electron_temperature_keV > 0.01
     density_condition = electron_density_1e20_per_m3 > 0.0
+    active = temperature_condition & density_condition
+
+    # lax.cond VJP evaluates both branches; clamp te/ne so the true-branch VJP
+    # never sees near-zero values that cause NaN in the Maxwell-Juettner formula.
+    safe_te = jnp.where(active, electron_temperature_keV, 1.0)  # 1 keV fallback
+    safe_ne = jnp.where(active, electron_density_1e20_per_m3, 0.1)  # 0.1e20 fallback
     return jax.lax.cond(
-        temperature_condition & density_condition,
+        active,
         lambda: absorption_coefficient(
             refractive_index=refractive_index,
             magnetic_field=magnetic_field,
-            electron_density_1e20_per_m3=electron_density_1e20_per_m3,
-            electron_temperature_keV=electron_temperature_keV,
+            electron_density_1e20_per_m3=safe_ne,
+            electron_temperature_keV=safe_te,
             frequency=frequency,
             mode=mode,
         ),
@@ -212,17 +218,20 @@ def compute_resonance_integral(
     nY = harmonic_index * cyclotron_frequency / frequency
     n_para = refractive_index_para
     denom = 1 - n_para**2
-    delta_u = jnp.sqrt(n_para**2 + nY**2 - 1) / jnp.abs(denom)
+    # 1e-30 floor: at disc=0 (exact 2nd-harmonic resonance), sqrt'(0)=Inf causes
+    # 0*Inf=NaN in the adjoint.  The floor keeps the gradient finite.
+    # jnp.where zeros delta_u for disc<0; the VJP of the enclosing lax.cond
+    # evaluates this code even for the non-resonant branch.
+    disc = n_para**2 + nY**2 - 1
+    delta_u = jnp.sqrt(jnp.maximum(1e-30, disc)) / jnp.maximum(jnp.abs(denom), 1e-10)
+    delta_u = jnp.where(disc < 0, 0.0, delta_u)
     u_res = nY * n_para / denom
     u_min = u_res - delta_u
     u_max = u_res + delta_u
 
-    # Enforce physical constraint: gamma = nY + N_para * u_para >= 1
-    # This gives: u_para >= (1 - nY) / N_para (if N_para > 0)
-    #         or: u_para <= (1 - nY) / N_para (if N_para < 0)
-    u_gamma_limit = (1 - nY) / n_para
-    u_min = jnp.where(n_para > 0, jnp.maximum(u_min, u_gamma_limit), u_min)
-    u_max = jnp.where(n_para < 0, jnp.minimum(u_max, u_gamma_limit), u_max)
+    # No u_gamma_limit = (1-nY)/n_para enforcement: its gradient ~1/n_para²
+    # diverges catastrophically when n_para≈0.  The γ²-u²-1<0 guard inside
+    # resonance_integrand already zeros the integrand for any u with γ<1.
 
     # Early return if resonance region doesn't intersect bulk of distribution.
     # intersects with the bulk of the Maxwellian. Use u_cutoff = 5 * thermal_velocity
@@ -387,10 +396,12 @@ def quasilinear_diffusion_coefficient(
     Returns:
         The quasilinear diffusion coefficient Dql.
     """
-    # normalized perpendicular momentum u_perp = p_perp / (m_0 *c)
-    # the radicand cannot be negative as we checked this in `resonance_integrand`
+    # u_perp = p_perp / (m_0 c).  Two forms to avoid 0*Inf=NaN in the adjoint:
+    #   perp_mom_sq       = max(0, x)       → gradient=0 at boundary (used in return)
+    #   perpendicular_momentum = sqrt(max(1e-30, x)) → finite gradient (used in kperp_rho)
+    perp_mom_sq = jnp.maximum(0.0, lorentz_factor**2 - parallel_momentum**2 - 1)
     perpendicular_momentum = jnp.sqrt(
-        lorentz_factor**2 - parallel_momentum**2 - 1,
+        jnp.maximum(1e-30, lorentz_factor**2 - parallel_momentum**2 - 1)
     )
 
     # this is the perpendicular wave number times the electron Larmor radius
@@ -432,4 +443,4 @@ def quasilinear_diffusion_coefficient(
     # evaluate Hermitian form: pe^H * An * pe
     # vdot does conjugation on first argument
     D = jnp.vdot(polarization_vector, An @ polarization_vector)
-    return perpendicular_momentum**2 * D.real
+    return perp_mom_sq * D.real
