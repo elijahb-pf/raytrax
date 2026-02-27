@@ -1,0 +1,15 @@
+.md-typeset .admonition,
+.md-typeset details.info {
+  border-color: var(--md-accent-fg-color);
+  background-color: var(--md-accent-fg-color--transparent);
+}
+
+
+.md-typeset .info > .admonition-title::before,
+.md-typeset .info > summary::before {
+  background-color: var(--md-accent-fg-color);
+}
+
+.md-typeset .info > .admonition-title {
+  color: var(--md-accent-fg-color);
+}

@@ -75,3 +75,8 @@ $$ \mathcal{H}(\boldsymbol{r}, \boldsymbol{n}) = |\boldsymbol{n}|^2 - n_{AH}^2(\
 where $n_{AH}^2$ is the Appleton-Hartree refractive index squared calculated above. This form ensures that $\mathcal{H}=0$ is equivalent to satisfying the dispersion relation. The gradients of this Hamiltonian with respect to position and wave vector drive the ray tracing equations.
 
 The appropriate sign in the Appleton-Hartree formula is determined by the polarization of the wave mode being traced. Raytrax allows users to specify which mode (O or X) they wish to trace, ensuring that the correct branch of the dispersion relation is used in the Hamiltonian.
+
+
+!!! info
+
+    Currently, only the cold plasma Hamiltonian is used for tracing in Raytrax. The [absorption coefficient](absorption.md) is calculated fully relativistically.

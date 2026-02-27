@@ -10,8 +10,12 @@ Raytrax employs the geometric optics (or WKB) approximation for microwave rays a
 
 Raytrax is released under the MIT License.
 
+!!! info
 
-[^1]: Marushchenko, Nikolai B., Yu Turkin, and Henning Maaßberg. "Ray-tracing code TRAVIS for ECR heating, EC current drive and ECE diagnostic." Computer Physics Communications 185.1 (2014): 165-176.
+    Raytrax is currently in an early stage of development. Please expect API changes. The code has not been fully validated against existing ray tracing codes or experimental data yet.
+
+
+[^1]: Marushchenko, Nikolai B., Yu Turkin, and Henning Maaßberg. "Ray-tracing code TRAVIS for ECR heating, EC current drive and ECE diagnostic." Computer Physics Communications 185.1 (2014): 165-176. [doi:10.1016/j.cpc.2013.09.002](https://doi.org/10.1016/j.cpc.2013.09.002)
 
 
 

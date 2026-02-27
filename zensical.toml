@@ -13,10 +13,17 @@ nav = [
         {"Ray Tracing" = "theory/ray-tracing.md"},
         {"Absorption" = "theory/absorption.md"},
     ]},
+    {"About" = [
+        {"Acknowledgements" = "acknowledgements.md"},
+    ]},
     {"Reference" = [
         {"API Reference" = "api.md"},
     ]},
 ]
+extra_css = [
+    "assets/extra.css",
+]
+
 extra_javascript = [
     "javascripts/mathjax.js",
     "https://unpkg.com/mathjax@3/es5/tex-mml-chtml.js"

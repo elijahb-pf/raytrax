@@ -62,3 +62,23 @@ where $s$ is the arc length, and the **linear absorption power density** (units 
 $$\frac{dP}{ds}=P_0\alpha e^{-\tau}$$
 
 where $P_0$ is the initial power of the ray.
+
+## Weakly Relatvistic Dielectric Tensor
+
+For the hermitian part of the dispersion tensor appearing in the denominator of the absorption coefficient,
+
+$$\boldsymbol{\mathsf{D}}^H = \boldsymbol{\varepsilon_r}^H - n^2 \boldsymbol{I} + \boldsymbol{n}\boldsymbol{n}$$
+
+raytrax follows Travis[^1] by using the weakly relativistic dielectric tensor taken from Krivenski and Orefice[^2].
+
+It is implemented in `raytrax.physics.dielectric_tensor.weakly_relativistic_dielectric_tensor`.
+
+
+## Fully Relativistic Dielectric Tensor
+
+For the anti-hermitian part of the dielectric tensor appearing in the numerator of the absorption coefficient, the fully relativistic dielectric tensor is required, which is computed using the integral approach[^3].
+
+[^1]: Marushchenko, Nikolai B., Yu Turkin, and Henning Maaßberg. "Ray-tracing code TRAVIS for ECR heating, EC current drive and ECE diagnostic." Computer Physics Communications 185.1 (2014): 165-176. [doi:10.1016/j.cpc.2013.09.002](https://doi.org/10.1016/j.cpc.2013.09.002)
+[^2]: Krivenski and Orefice, J. Plasma Physics (1983), vol. 30, part 1, pp. 125-131, [doi:10.1017/S0022377800001045](https://doi.org/10.1017/S0022377800001045)
+[^3]: Bornatici, M., Cano, R., De Barbieri, O., & Engelmann, F. (1983). Electron cyclotron emission and absorption in fusion plasmas. Nuclear Fusion, 23(9), 1153-1257. [doi:10.1088/0029-5515/23/9/005](https://doi.org/10.1088/0029-5515/23/9/005)
+
