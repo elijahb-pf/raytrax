@@ -41,10 +41,10 @@ docs = [
   "zensical",
   "mkdocstrings-python",
   "mkdocs-gallery",
-  "pyvista",
+  "pyvista[jupyter]",
 ]
 plot3d = [
-  "pyvista",
+  "pyvista[jupyter]",
 ]
 
 [project.urls]
