@@ -103,6 +103,27 @@ def _bin_power_deposition(
     return power_per_bin / jnp.maximum(dV, 1e-30)
 
 
+def _deposition_stats(
+    power_binned: jt.Float[jax.Array, " nrho"],
+    rho_1d: jt.Float[jax.Array, " nrho"],
+    dvolume_drho: jt.Float[jax.Array, " nrho"],
+    absorbed_fraction: jt.Float[jax.Array, ""],
+) -> tuple[jt.Float[jax.Array, ""], jt.Float[jax.Array, ""]]:
+    """Compute flux-weighted mean and standard deviation of power deposition in ρ.
+
+    Returns (rho_mean, rho_std), both differentiable.
+    """
+    edges = jnp.concatenate([rho_1d[:1], 0.5 * (rho_1d[:-1] + rho_1d[1:]), rho_1d[-1:]])
+    dV = dvolume_drho * jnp.diff(edges)
+    power_per_bin = power_binned * dV  # fraction of total power in each bin
+    safe_abs = jnp.maximum(absorbed_fraction, 1e-30)
+    rho_mean = jnp.sum(rho_1d * power_per_bin) / safe_abs
+    rho_std = jnp.sqrt(
+        jnp.maximum(jnp.sum((rho_1d - rho_mean) ** 2 * power_per_bin) / safe_abs, 0.0)
+    )
+    return rho_mean, rho_std
+
+
 def _run_trace(
     magnetic_configuration: MagneticConfiguration,
     radial_profiles: RadialProfiles,
@@ -168,12 +189,21 @@ def trace(
         )
         # Padded optical_depth entries are inf (diffrax fills unused slots with inf).
         # _bin_power_deposition sanitizes inf before computing dP.
+        od = result.ode_state[:, 6]
+        tau_final = jnp.max(jnp.where(jnp.isfinite(od), od, 0.0))
+        absorbed_fraction = 1.0 - jnp.exp(-tau_final)
         power_binned = _bin_power_deposition(
             magnetic_configuration.rho_1d,
             magnetic_configuration.dvolume_drho,
             result.arc_length,
             result.normalized_effective_radius,
-            result.ode_state[:, 6],
+            od,
+        )
+        rho_mean, rho_std = _deposition_stats(
+            power_binned,
+            magnetic_configuration.rho_1d,
+            magnetic_configuration.dvolume_drho,
+            absorbed_fraction,
         )
         return TraceResult(
             beam_profile=beam_profile,
@@ -181,6 +211,11 @@ def trace(
                 rho=magnetic_configuration.rho_1d,
                 volumetric_power_density=power_binned * beam.power,
             ),
+            absorbed_power=absorbed_fraction * beam.power,
+            absorbed_power_fraction=absorbed_fraction,
+            optical_depth=tau_final,
+            deposition_rho_mean=rho_mean,
+            deposition_rho_std=rho_std,
         )
 
     # Slot 0 is the antenna position (SaveAt t0=True); accepted steps follow.
@@ -207,10 +242,23 @@ def trace(
         result.ode_state[:n, 6],
     )
 
+    tau_final = beam_profile.optical_depth[-1]
+    absorbed_fraction = 1.0 - jnp.exp(-tau_final)
+    rho_mean, rho_std = _deposition_stats(
+        power_binned,
+        magnetic_configuration.rho_1d,
+        magnetic_configuration.dvolume_drho,
+        absorbed_fraction,
+    )
     return TraceResult(
         beam_profile=beam_profile,
         radial_profile=RadialProfile(
             rho=magnetic_configuration.rho_1d,
             volumetric_power_density=power_binned * beam.power,
         ),
+        absorbed_power=absorbed_fraction * beam.power,
+        absorbed_power_fraction=absorbed_fraction,
+        optical_depth=tau_final,
+        deposition_rho_mean=rho_mean,
+        deposition_rho_std=rho_std,
     )

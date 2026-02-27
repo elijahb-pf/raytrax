@@ -168,6 +168,21 @@ class TraceResult:
     radial_profile: RadialProfile
     """The radial deposition profile."""
 
+    absorbed_power: jt.Float[jax.Array, ""]
+    """Total power absorbed by the plasma in W."""
+
+    absorbed_power_fraction: jt.Float[jax.Array, ""]
+    """Fraction of input beam power absorbed by the plasma, i.e. $1 - e^{-\\tau}$."""
+
+    optical_depth: jt.Float[jax.Array, ""]
+    r"""Total optical depth $\tau$ accumulated along the ray."""
+
+    deposition_rho_mean: jt.Float[jax.Array, ""]
+    r"""Flux-surface-volume-weighted mean normalised radius $\langle\rho\rangle$ of power deposition."""
+
+    deposition_rho_std: jt.Float[jax.Array, ""]
+    r"""Flux-surface-volume-weighted standard deviation of $\rho$ for power deposition."""
+
 
 @dataclass
 class RadialProfiles:
