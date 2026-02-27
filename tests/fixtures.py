@@ -50,9 +50,10 @@ def torus_wout():
     bsupvmnc = np.zeros((2, n_surfaces))
     bsupvmnc[0] = 0.7
 
-    # Add gmnc and gmns arrays for volume calculations
+    # Jacobian for a torus: integrating over (θ, φ) gives g_{0,0} = R₀ r₀² / 2
+    # (constant — independent of ρ), so ∫₀¹ (2π)² g_{0,0} 2ρ dρ = 2π² R₀ r₀².
     gmnc = np.zeros((2, n_surfaces))
-    gmnc[0] = np.linspace(0.1, 1.0, n_surfaces)  # g_{0,0} mode varies radially
+    gmnc[0] = major_radius * minor_radius**2 / 2  # = 0.25 m², constant
     gmns = np.zeros((2, n_surfaces))
 
     return TestWout(
