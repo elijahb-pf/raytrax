@@ -61,8 +61,8 @@ def _bin_power_deposition(
 
     # --- 2. Dense linear interpolation along arc length --------------------
     s_fine = jnp.linspace(arc_length[0], s_max, _N_INTERP)
-    rho_fine = interpax.interp1d(s_fine, arc_length, rho_trajectory, method="linear")
-    tau_fine = interpax.interp1d(s_fine, arc_length, optical_depth, method="linear")
+    rho_fine = interpax.interp1d(s_fine, arc_length, rho_trajectory, method="cubic")
+    tau_fine = interpax.interp1d(s_fine, arc_length, optical_depth, method="cubic")
 
     # --- 3. Exact overlap-based binning on dense samples -------------------
     # dP_i = exp(-τ_i) − exp(-τ_{i+1}), clamped to ≥ 0.
