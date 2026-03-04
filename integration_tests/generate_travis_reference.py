@@ -2,9 +2,8 @@
 
 import argparse
 from pathlib import Path
-import numpy as np
-import jax.numpy as jnp
 
+import jax.numpy as jnp
 from travis_wrapper import TravisECRHInput, run_travis, save_reference_data
 
 
@@ -65,7 +64,7 @@ def main():
     print("Running TRAVIS...")
     output = run_travis(args.travis_exe, input_params, output_dir=args.output_dir)
 
-    print(f"\nTRAVIS simulation complete:")
+    print("\nTRAVIS simulation complete:")
     print(f"  Success: {output.success}")
     print(f"  Ray points: {len(output.arc_length_m)}")
     print(f"  Total path length: {output.arc_length_m[-1]:.3f} m")

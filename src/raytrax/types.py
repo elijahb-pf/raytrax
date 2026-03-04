@@ -63,9 +63,9 @@ class SafetensorsMixin:
             elif field.name in metadata:
                 # It's a scalar - parse back from string
                 value_str = metadata[field.name]
-                if field.type == int:
+                if field.type is int:
                     field_values[field.name] = int(value_str)
-                elif field.type == bool:
+                elif field.type is bool:
                     field_values[field.name] = value_str == "True"
                 else:
                     field_values[field.name] = value_str

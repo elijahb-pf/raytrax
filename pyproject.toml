@@ -37,6 +37,7 @@ readme = "README.md"
 test = [
   "pytest",
   "mypy",
+  "ruff",
   "pre-commit",
 ]
 docs = [
@@ -51,6 +52,25 @@ plot3d = [
 
 [project.urls]
 Homepage = "https://github.com/proximafusion/raytrax"
+
+[tool.ruff]
+line-length = 88
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "W"]
+ignore = [
+  "E501",   # line too long — handled by formatter
+  "F722",   # jaxtyping dimension strings look like invalid annotations to ruff
+  "F821",   # jaxtyping dimension names look like undefined names to ruff
+]
+
+[tool.ruff.lint.per-file-ignores]
+"docs/examples/**" = ["E402"]     # example scripts intentionally set up env before imports
+"integration_tests/**" = ["E402"] # same reason
+"src/raytrax/__init__.py" = ["E402"]  # JAX config must run before submodule imports
+
+[tool.ruff.lint.isort]
+known-first-party = ["raytrax"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

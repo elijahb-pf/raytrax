@@ -1,9 +1,10 @@
 import jax
 import jax.numpy as jnp
 import numpy as np
+from scipy.optimize import root_scalar
+
 from raytrax.physics import dielectric_tensor as dielectric_tensor_module
 from raytrax.physics import polarization, power_flux, quantities
-from scipy.optimize import root_scalar
 
 jax.config.update("jax_enable_x64", True)
 

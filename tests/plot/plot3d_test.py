@@ -1,7 +1,6 @@
 """Tests for 3D plotting functions."""
 
 import jax.numpy as jnp
-import numpy as np
 import pytest
 
 from raytrax.plot.plot3d import (
@@ -10,8 +9,6 @@ from raytrax.plot.plot3d import (
     plot_flux_surface_3d,
 )
 from raytrax.types import BeamProfile
-
-from ..fixtures import w7x_magnetic_configuration, w7x_wout
 
 pytest.importorskip("pyvista")
 

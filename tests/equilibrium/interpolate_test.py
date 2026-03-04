@@ -2,25 +2,22 @@ import jax
 import jax.numpy as jnp
 import numpy as np
 
-from raytrax.equilibrium.interpolate import MagneticConfiguration
 from raytrax.equilibrium.fourier import evaluate_rphiz_on_toroidal_grid
 from raytrax.equilibrium.interpolate import (
-    build_magnetic_field_interpolator,
-    build_radial_interpolators,
-    build_rho_interpolator,
+    MagneticConfiguration,
     build_electron_density_profile_interpolator,
     build_electron_temperature_profile_interpolator,
+    build_magnetic_field_interpolator,
+    build_rho_interpolator,
     cylindrical_grid_for_equilibrium,
     interpolate_toroidal_to_cylindrical_grid,
 )
 from raytrax.solver import (
-    _map_to_fundamental_domain,
     _apply_B_stellarator_symmetry,
     _cylindrical_to_cartesian_B,
+    _map_to_fundamental_domain,
 )
 from raytrax.types import RadialProfiles
-
-from ..fixtures import tokamak_magnetic_configuration, torus_wout, w7x_wout
 
 
 def _make_B_callable(B_interp, nfp):
@@ -197,7 +194,6 @@ def test_build_magnetic_field_interpolator_w7x(w7x_wout):
     # Test the interpolator at different positions
     # Use positions we know are within the W7X geometry
     R_major = 5.6
-    a_minor = 0.5
 
     positions = jnp.array(
         [
@@ -212,17 +208,17 @@ def test_build_magnetic_field_interpolator_w7x(w7x_wout):
         B_field = B_interpolator(pos)
 
         assert B_field.shape == (3,)
-        assert not jnp.all(
-            jnp.isnan(B_field)
-        ), f"All components are NaN at position {pos}"
+        assert not jnp.all(jnp.isnan(B_field)), (
+            f"All components are NaN at position {pos}"
+        )
 
         # Check for any finite values in the field
         finite_components = B_field[jnp.isfinite(B_field)]
         if len(finite_components) > 0:
             # If we have finite components, at least one should be non-zero
-            assert jnp.any(
-                jnp.abs(finite_components) > 1e-10
-            ), f"Magnetic field is too small at position {pos}"
+            assert jnp.any(jnp.abs(finite_components) > 1e-10), (
+                f"Magnetic field is too small at position {pos}"
+            )
 
     finite_positions = positions[jnp.array([0])]  # Start with just the first position
 
@@ -452,13 +448,13 @@ def test_stellarator_symmetry_in_interpolators(w7x_wout):
     rho3 = rho_interpolator(pos3)
 
     # Stellarator-symmetric positions should give same rho (rho is even under symmetry)
-    assert jnp.allclose(
-        rho1, rho2, rtol=1e-4
-    ), f"Stellarator symmetry failed for rho: {rho1} != {rho2}"
+    assert jnp.allclose(rho1, rho2, rtol=1e-4), (
+        f"Stellarator symmetry failed for rho: {rho1} != {rho2}"
+    )
     # Next field period should give same result
-    assert jnp.allclose(
-        rho1, rho3, rtol=1e-4
-    ), f"Field periodicity failed for rho: {rho1} != {rho3}"
+    assert jnp.allclose(rho1, rho3, rtol=1e-4), (
+        f"Field periodicity failed for rho: {rho1} != {rho3}"
+    )
 
     # Test |B| (stellarator symmetry: |B| is even, so same at symmetric positions)
     B1 = B_interpolator(pos1)
@@ -469,17 +465,17 @@ def test_stellarator_symmetry_in_interpolators(w7x_wout):
     B2_mag = jnp.linalg.norm(B2)
     B3_mag = jnp.linalg.norm(B3)
 
-    assert jnp.allclose(
-        B1_mag, B2_mag, rtol=1e-4
-    ), f"Stellarator symmetry failed for |B|: {B1_mag} != {B2_mag}"
+    assert jnp.allclose(B1_mag, B2_mag, rtol=1e-4), (
+        f"Stellarator symmetry failed for |B|: {B1_mag} != {B2_mag}"
+    )
     # Next field period: |B| and B_Z are identical; Cartesian Bx/By are rotated by
     # period in phi (because the Cartesian frame rotates), so compare only |B| and B_Z.
-    assert jnp.allclose(
-        B1_mag, B3_mag, rtol=1e-4
-    ), f"Field periodicity failed for |B|: {B1_mag} != {B3_mag}"
-    assert jnp.allclose(
-        B1[2], B3[2], rtol=1e-4
-    ), f"Field periodicity failed for B_Z: {B1[2]} != {B3[2]}"
+    assert jnp.allclose(B1_mag, B3_mag, rtol=1e-4), (
+        f"Field periodicity failed for |B|: {B1_mag} != {B3_mag}"
+    )
+    assert jnp.allclose(B1[2], B3[2], rtol=1e-4), (
+        f"Field periodicity failed for B_Z: {B1[2]} != {B3[2]}"
+    )
 
 
 def test_extrapolation_in_cylindrical_grid(w7x_wout):
@@ -537,9 +533,9 @@ def test_extrapolation_in_cylindrical_grid(w7x_wout):
     dB = jnp.diff(B_valid)
     max_jump = jnp.max(jnp.abs(dB))
     # Allow at most ~1.0T change between adjacent points (reasonable for ~3cm spacing)
-    assert (
-        max_jump < 1.0
-    ), f"B field has too large jump: {max_jump:.3f} T (indicates bad extrapolation)"
+    assert max_jump < 1.0, (
+        f"B field has too large jump: {max_jump:.3f} T (indicates bad extrapolation)"
+    )
 
 
 # --- Axisymmetric (tokamak) tests ---
@@ -620,15 +616,15 @@ def test_axisymmetric_eval_magnetic_field(tokamak_magnetic_configuration):
     # At phi=pi/2, B should point in the -x direction (B_phi at phi=pi/2 -> -B_x)
     pos_phi90 = jnp.array([0.0, _TOKAMAK_R0, 0.0])
     B = _eval_magnetic_field(pos_phi90, interpolators, nfp=1)
-    assert jnp.allclose(
-        B[0], -_TOKAMAK_B0, rtol=1e-2
-    ), f"B_x should be ~-B0, got {B[0]}"
+    assert jnp.allclose(B[0], -_TOKAMAK_B0, rtol=1e-2), (
+        f"B_x should be ~-B0, got {B[0]}"
+    )
     assert jnp.allclose(B[1], 0.0, atol=1e-3), f"B_y should be ~0, got {B[1]}"
 
     # |B| should be the same at any toroidal angle for same R
-    assert jnp.allclose(
-        jnp.linalg.norm(B), _TOKAMAK_B0, rtol=1e-2
-    ), "|B| should be B0 at the magnetic axis"
+    assert jnp.allclose(jnp.linalg.norm(B), _TOKAMAK_B0, rtol=1e-2), (
+        "|B| should be B0 at the magnetic axis"
+    )
 
 
 def test_axisymmetric_eval_rho(tokamak_magnetic_configuration):
@@ -641,9 +637,9 @@ def test_axisymmetric_eval_rho(tokamak_magnetic_configuration):
     for phi in [0.0, 1.0, jnp.pi, 5.0]:
         pos = jnp.array([_TOKAMAK_R0 * jnp.cos(phi), _TOKAMAK_R0 * jnp.sin(phi), 0.0])
         rho_val = _eval_rho(pos, interpolators, nfp=1)
-        assert jnp.allclose(
-            rho_val, 0.0, atol=0.05
-        ), f"rho at axis should be ~0, got {rho_val} at phi={phi}"
+        assert jnp.allclose(rho_val, 0.0, atol=0.05), (
+            f"rho at axis should be ~0, got {rho_val} at phi={phi}"
+        )
 
     # At outboard midplane
     pos_out = jnp.array([_TOKAMAK_R0 + 0.5 * _TOKAMAK_A, 0.0, 0.0])

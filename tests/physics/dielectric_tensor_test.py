@@ -2,6 +2,8 @@ import jax
 import jax.numpy as jnp
 import numpy as np
 import pytest
+from scipy.special import factorial
+
 from raytrax.physics import quantities
 from raytrax.physics.dielectric_tensor import (
     a_shkarofsky,
@@ -13,7 +15,6 @@ from raytrax.physics.dispersion import (
     _dispersion_appleton_hartee,
     dispersion_tensor_stix,
 )
-from scipy.special import factorial
 
 jax.config.update("jax_enable_x64", True)
 _MACHINE_PRECISION = float(np.finfo(float).eps)
@@ -118,12 +119,6 @@ def test_weakly_relativistic_converges_to_cold():
         refractive_index_para=refractive_index_para,
         max_s=1,
         max_k=1,
-    )
-
-    eps_cold = cold_dielectric_tensor(
-        frequency=frequency,
-        plasma_frequency=plasma_frequency,
-        cyclotron_frequency=cyclotron_frequency,
     )
 
     # these vanish in the cold plasma limit

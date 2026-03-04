@@ -6,11 +6,11 @@ import jax.numpy as jnp
 import jaxtyping as jt
 
 from .equilibrium.interpolate import (
-    build_magnetic_field_interpolator,
-    build_rho_interpolator,
+    MagneticConfiguration,
     build_electron_density_profile_interpolator,
     build_electron_temperature_profile_interpolator,
-    MagneticConfiguration,
+    build_magnetic_field_interpolator,
+    build_rho_interpolator,
 )
 from .ray import RaySetting
 from .solver import trace_jitted

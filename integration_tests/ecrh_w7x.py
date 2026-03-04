@@ -1,21 +1,22 @@
 """Integration test: W7-X ECRH absorption comparing raytrax with TRAVIS."""
 
-import numpy as np
-import jax
-import jax.numpy as jnp
-from pathlib import Path
-import sys
 import shutil
+import sys
+from pathlib import Path
+
+import jax.numpy as jnp
+import numpy as np
 
 # Add parent directory to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent))
 sys.path.insert(0, str(Path(__file__).parent.parent / "tests"))
 
+from travis_wrapper import TravisECRHInput, run_travis, save_reference_data
+
 from raytrax.api import trace
 from raytrax.equilibrium.interpolate import MagneticConfiguration
-from raytrax.types import Beam, RadialProfiles
 from raytrax.examples import get_w7x_equilibrium as get_w7x_wout
-from travis_wrapper import run_travis, TravisECRHInput, save_reference_data
+from raytrax.types import Beam, RadialProfiles
 
 # Find TRAVIS executable in PATH, or None if not available
 _travis_exe_path = shutil.which("travis-nc")
@@ -143,7 +144,7 @@ def main():
     te_parm = (0.03, 4, 2.0, -0.2, 0.5)
     te_keV = travis_profile(rho, te_central, *te_parm)
 
-    print(f"\nProfile values:")
+    print("\nProfile values:")
     print(f"  ne(0) = {ne_1e20[0]:.4f} × 10^20 m^-3, Te(0) = {te_keV[0]:.4f} keV")
     print(
         f"  ne(0.5) = {ne_1e20[250]:.4f} × 10^20 m^-3, Te(0.5) = {te_keV[250]:.4f} keV"
@@ -180,7 +181,7 @@ def main():
     TRAVIS_OUTPUT_DIR.mkdir(exist_ok=True)
 
     if TRAVIS_EXE is None or not TRAVIS_EXE.exists():
-        print(f"WARNING: TRAVIS executable 'travis-nc' not found in PATH")
+        print("WARNING: TRAVIS executable 'travis-nc' not found in PATH")
         print("Skipping TRAVIS comparison")
         travis_result = None
     else:
@@ -215,7 +216,7 @@ def main():
         )
         print(f"TRAVIS final optical depth: {travis_result.optical_depth[-1]:.4f}")
         print(
-            f"TRAVIS absorption: {100*(1 - np.exp(-travis_result.optical_depth[-1])):.2f}%"
+            f"TRAVIS absorption: {100 * (1 - np.exp(-travis_result.optical_depth[-1])):.2f}%"
         )
 
     # Run raytrax
@@ -237,7 +238,7 @@ def main():
         f"raytrax trajectory: {len(s)} points, arc length {s[0]:.3f} -> {s[-1]:.3f} m"
     )
     print(f"raytrax final optical depth: tau = {tau[-1]:.4f}")
-    print(f"raytrax absorption: {100*(1 - np.exp(-tau[-1])):.2f}%")
+    print(f"raytrax absorption: {100 * (1 - np.exp(-tau[-1])):.2f}%")
     print(f"raytrax max absorption coefficient: {np.nanmax(alpha):.2f} m^-1")
 
     # Comparison
@@ -314,40 +315,42 @@ def main():
         rho_arr_rx = rho_arr[mask_rx]
         rho_diff = rho_arr_rx - rho_travis_at_rx
 
-        print(f"\nComparison statistics:")
-        print(f"  XYZ Position: RMS = {np.sqrt(np.mean(pos_dist**2))*1000:.2f} mm")
-        print(f"  |B|: Mean error = {np.mean(np.abs(B_diff/B_travis_at_rx))*100:.2f}%")
+        print("\nComparison statistics:")
+        print(f"  XYZ Position: RMS = {np.sqrt(np.mean(pos_dist**2)) * 1000:.2f} mm")
         print(
-            f"  ne:  Mean error = {np.mean(np.abs(ne_diff/ne_travis_at_rx))*100:.2f}%"
+            f"  |B|: Mean error = {np.mean(np.abs(B_diff / B_travis_at_rx)) * 100:.2f}%"
         )
         print(
-            f"  Te:  Mean error = {np.mean(np.abs(te_diff/te_travis_at_rx))*100:.2f}%"
+            f"  ne:  Mean error = {np.mean(np.abs(ne_diff / ne_travis_at_rx)) * 100:.2f}%"
+        )
+        print(
+            f"  Te:  Mean error = {np.mean(np.abs(te_diff / te_travis_at_rx)) * 100:.2f}%"
         )
         print(f"  rho: RMS = {np.sqrt(np.mean(rho_diff**2)):.4f}")
 
         # Detailed tabulation - write to file
         table_file = Path(__file__).parent / "data" / "rho_comparison.txt"
         with open(table_file, "w") as f:
-            f.write(f"{'='*100}\n")
+            f.write(f"{'=' * 100}\n")
             f.write("DETAILED ρ vs s COMPARISON\n")
-            f.write(f"{'='*100}\n")
+            f.write(f"{'=' * 100}\n")
             f.write(
                 f"{'s [m]':>10} {'ρ_raytrax':>12} {'ρ_TRAVIS':>12} {'Δρ':>10} {'ne_rx':>10} {'ne_tr':>10} {'Te_rx':>10} {'Te_tr':>10}\n"
             )
-            f.write(f"{'-'*100}\n")
+            f.write(f"{'-' * 100}\n")
             for i in range(len(rho_arr_rx)):
                 s_val = s[mask_rx][i]
                 f.write(
                     f"{s_val:10.4f} {rho_arr_rx[i]:12.4f} {rho_travis_at_rx[i]:12.4f} {rho_diff[i]:10.4f} "
                     f"{ne_arr_rx[i]:10.4f} {ne_travis_at_rx[i]:10.4f} {te_arr_rx[i]:10.3f} {te_travis_at_rx[i]:10.3f}\n"
                 )
-            f.write(f"{'='*100}\n")
+            f.write(f"{'=' * 100}\n")
         print(f"\nDetailed ρ vs s comparison saved to: {table_file}")
 
         # Debug: Check vacuum propagation and rho gradient
-        print(f"\n{'='*80}")
+        print(f"\n{'=' * 80}")
         print("DEBUG: Vacuum propagation and ρ gradient check")
-        print(f"{'='*80}")
+        print(f"{'=' * 80}")
 
         # Check if rays are actually in vacuum at start
         idx_rx_first = 0
@@ -370,11 +373,11 @@ def main():
             min(len(travis_result.arc_length_m), travis_lcms_idx + 5),
         ):
             print(
-                f"  idx={i}: s={s_travis_aligned[i]:.4f} m, XYZ=[{travis_result.position_m[i,0]:.6f}, {travis_result.position_m[i,1]:.6f}, {travis_result.position_m[i,2]:.6f}], ρ={travis_result.rho[i]:.6f}"
+                f"  idx={i}: s={s_travis_aligned[i]:.4f} m, XYZ=[{travis_result.position_m[i, 0]:.6f}, {travis_result.position_m[i, 1]:.6f}, {travis_result.position_m[i, 2]:.6f}], ρ={travis_result.rho[i]:.6f}"
             )
 
         # Check ρ gradient at edge
-        print(f"\nρ gradient test at edge:")
+        print("\nρ gradient test at edge:")
         from raytrax.equilibrium.interpolate import build_rho_interpolator
 
         rho_fn = build_rho_interpolator(eq_interp)
@@ -394,11 +397,11 @@ def main():
             rho_val = float(rho_fn(r, phi, z))
             dist = np.linalg.norm(xyz - xyz_rx_first) * 1000
             print(
-                f"  +{dist:.1f}mm in X: ρ={rho_val:.6f}, Δρ={rho_val-rho_rx_first:.6f}"
+                f"  +{dist:.1f}mm in X: ρ={rho_val:.6f}, Δρ={rho_val - rho_rx_first:.6f}"
             )
 
         # Check antenna position
-        print(f"\nBeam starting position (antenna):")
+        print("\nBeam starting position (antenna):")
         print(
             f"  XYZ: [{antenna_cart[0]:.6f}, {antenna_cart[1]:.6f}, {antenna_cart[2]:.6f}] m"
         )
@@ -417,32 +420,32 @@ def main():
         dist_to_tr_first = np.linalg.norm(vec_to_tr_first)
         dir_tr_actual = vec_to_tr_first / dist_to_tr_first
 
-        print(f"\nraytrax first point:")
+        print("\nraytrax first point:")
         print(f"  Distance from antenna: {dist_to_rx_first:.6f} m")
         print(
             f"  Actual direction: [{dir_rx_actual[0]:.6f}, {dir_rx_actual[1]:.6f}, {dir_rx_actual[2]:.6f}]"
         )
         print(
-            f"  Direction error: {np.linalg.norm(dir_rx_actual - np.array(direction))*1e6:.2f} ppm"
+            f"  Direction error: {np.linalg.norm(dir_rx_actual - np.array(direction)) * 1e6:.2f} ppm"
         )
 
-        print(f"\nTRAVIS first point:")
+        print("\nTRAVIS first point:")
         print(f"  Distance from antenna: {dist_to_tr_first:.6f} m")
         print(
             f"  Actual direction: [{dir_tr_actual[0]:.6f}, {dir_tr_actual[1]:.6f}, {dir_tr_actual[2]:.6f}]"
         )
         print(
-            f"  Direction error: {np.linalg.norm(dir_tr_actual - np.array(direction))*1e6:.2f} ppm"
+            f"  Direction error: {np.linalg.norm(dir_tr_actual - np.array(direction)) * 1e6:.2f} ppm"
         )
 
-        print(f"\nDirection difference (raytrax - TRAVIS):")
+        print("\nDirection difference (raytrax - TRAVIS):")
         dir_diff = dir_rx_actual - dir_tr_actual
         print(f"  Δdir: [{dir_diff[0]:.8f}, {dir_diff[1]:.8f}, {dir_diff[2]:.8f}]")
-        print(f"  |Δdir|: {np.linalg.norm(dir_diff)*1e6:.2f} ppm")
+        print(f"  |Δdir|: {np.linalg.norm(dir_diff) * 1e6:.2f} ppm")
 
-        print(f"{'='*80}\n")
+        print(f"{'=' * 80}\n")
 
-        print(f"\nOptical depth:")
+        print("\nOptical depth:")
         print(f"  raytrax: {tau[-1]:.4f}")
         print(f"  TRAVIS:  {travis_result.optical_depth[-1]:.4f}")
         rel_error = (
@@ -452,12 +455,12 @@ def main():
         )
         print(f"  Error:   {rel_error:.2f}%")
 
-        print(f"\nAbsorption fraction:")
+        print("\nAbsorption fraction:")
         abs_rx = 1 - np.exp(-tau[-1])
         abs_tr = 1 - np.exp(-travis_result.optical_depth[-1])
-        print(f"  raytrax: {abs_rx*100:.2f}%")
-        print(f"  TRAVIS:  {abs_tr*100:.2f}%")
-        print(f"  Diff:    {abs(abs_rx - abs_tr)*100:.2f} percentage points")
+        print(f"  raytrax: {abs_rx * 100:.2f}%")
+        print(f"  TRAVIS:  {abs_tr * 100:.2f}%")
+        print(f"  Diff:    {abs(abs_rx - abs_tr) * 100:.2f} percentage points")
 
         # Check if agreement is good
         if rel_error < 5.0:

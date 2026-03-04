@@ -2,12 +2,10 @@ import jax.numpy as jnp
 import numpy as np
 
 from raytrax.equilibrium.fourier import (
+    dvolume_drho,
     evaluate_magnetic_field_on_toroidal_grid,
     evaluate_rphiz_on_toroidal_grid,
-    dvolume_drho,
 )
-
-from ..fixtures import torus_wout, w7x_wout
 
 
 def test_evaluate_rphiz_on_toroidal_grid(torus_wout):
@@ -108,12 +106,12 @@ def test_dvolume_drho_w7x_integration(w7x_wout):
 
     expected_volume_min = 20.0  # m³ (conservative lower bound)
     expected_volume_max = 35.0  # m³ (conservative upper bound)
-    assert (
-        total_volume > expected_volume_min
-    ), f"Volume {total_volume:.2f} m³ is too small"
-    assert (
-        total_volume < expected_volume_max
-    ), f"Volume {total_volume:.2f} m³ is too large"
+    assert total_volume > expected_volume_min, (
+        f"Volume {total_volume:.2f} m³ is too small"
+    )
+    assert total_volume < expected_volume_max, (
+        f"Volume {total_volume:.2f} m³ is too large"
+    )
     assert jnp.isfinite(total_volume), "Total volume is not finite"
 
     assert total_volume > 0, "Total volume should be positive"
@@ -162,6 +160,6 @@ def test_extrapolation_beyond_lcms(torus_wout):
     # Compare rho just below 1.0 vs just above
     idx_below = 7  # rho ≈ 0.93
     idx_above = 9  # rho = 1.2
-    assert jnp.allclose(
-        b_mag[idx_below], b_mag[idx_above], rtol=0.2
-    ), "B field should be continuous across LCMS"
+    assert jnp.allclose(b_mag[idx_below], b_mag[idx_above], rtol=0.2), (
+        "B field should be continuous across LCMS"
+    )

@@ -3,9 +3,10 @@ from typing import Literal
 
 import jax
 import jax.numpy as jnp
+from jaxtyping import Float
+
 from raytrax import ray
 from raytrax.physics import dispersion, quantities
-from jaxtyping import Float
 
 
 def hamiltonian(

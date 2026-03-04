@@ -1,12 +1,13 @@
 import jax
 import jax.numpy as jnp
 import numpy as np
+from scipy.special import wofz as scipy_wofz
+
 from raytrax.math.faddeeva import (
     plasma_dispersion_function,
     plasma_dispersion_function_derivative,
     wofz_jax,
 )
-from scipy.special import wofz as scipy_wofz
 
 jax.config.update("jax_enable_x64", True)
 
@@ -54,7 +55,10 @@ def test_plasma_dispersion_function_derivative():
 def test_wofz_jax_derivative():
     z = jnp.linspace(-10, 10, 1000, dtype=jnp.complex128)
     dx = z[1] - z[0]
-    wofz_scalar = lambda zi: wofz_jax(zi)
+
+    def wofz_scalar(zi):
+        return wofz_jax(zi)
+
     value = wofz_scalar(z)
     derivative = jax.vmap(jax.grad(wofz_scalar, holomorphic=True))(z)
     expected_derivative = (value[2:] - value[:-2]) / (2 * dx)

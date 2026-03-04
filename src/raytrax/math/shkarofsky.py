@@ -1,6 +1,7 @@
 import jax
 import jax.numpy as jnp
 import jaxtyping as jt
+
 from raytrax.math.faddeeva import plasma_dispersion_function as Z
 from raytrax.math.faddeeva import (
     plasma_dispersion_function_derivative as Z_prime,

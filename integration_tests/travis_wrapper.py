@@ -1,13 +1,14 @@
 """Functional wrapper for TRAVIS ECRH code with dataclass containers."""
 
-from dataclasses import dataclass
-from pathlib import Path
+import json
 import subprocess
 import tempfile
-import json
+from dataclasses import dataclass
+from pathlib import Path
+
 import numpy as np
-from jaxtyping import Float
 from jax import Array
+from jaxtyping import Float
 
 
 @dataclass
@@ -249,7 +250,7 @@ def _write_plasma_profile_file(params: TravisECRHInput, filepath: Path) -> None:
         raise ValueError("Plasma profiles are required")
 
     profile_lines = [
-        f"   {float(rho):18.15f}     {float(ne)*1e20:18.12e}          {float(te):18.12f}                  1.5"
+        f"   {float(rho):18.15f}     {float(ne) * 1e20:18.12e}          {float(te):18.12f}                  1.5"
         for rho, ne, te in zip(
             params.rho_grid,
             params.electron_density_1e20,

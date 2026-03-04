@@ -3,10 +3,9 @@
 import jax.numpy as jnp
 import numpy as np
 
-from raytrax.api import trace, _bin_power_deposition
+from raytrax.api import _bin_power_deposition, trace
 from raytrax.equilibrium.interpolate import MagneticConfiguration
 from raytrax.types import Beam, RadialProfiles
-from tests.fixtures import w7x_wout
 
 
 def test_from_vmec_wout_w7x(w7x_wout):
@@ -145,9 +144,9 @@ def test_bin_power_deposition_power_conservation():
     assert result.shape == rho_grid.shape
 
     traversed = (rho_grid >= 0.1) & (rho_grid <= 0.9)
-    assert jnp.all(
-        result[traversed] > 0
-    ), "Bins along trajectory path should be populated"
+    assert jnp.all(result[traversed] > 0), (
+        "Bins along trajectory path should be populated"
+    )
 
     edges = jnp.concatenate(
         [rho_grid[:1], 0.5 * (rho_grid[:-1] + rho_grid[1:]), rho_grid[-1:]]

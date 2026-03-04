@@ -1,6 +1,7 @@
 import jax
 import jax.numpy as jnp
 import numpy as np
+
 from raytrax.math.utils import anti_hermitian_part, hermitian_part
 
 jax.config.update("jax_enable_x64", True)

@@ -4,17 +4,18 @@ The TRAVIS reference JSON is committed to the repo so this test runs in CI
 without needing the TRAVIS binary installed.
 """
 
+from pathlib import Path
+
+import jax.numpy as jnp
 import numpy as np
 import pytest
-import jax.numpy as jnp
-from pathlib import Path
 from scipy.interpolate import interp1d
+from travis_wrapper import load_reference_data
 
 from raytrax.api import trace
 from raytrax.equilibrium.interpolate import MagneticConfiguration
-from raytrax.types import Beam, RadialProfiles
 from raytrax.examples import get_w7x_equilibrium as get_w7x_wout
-from travis_wrapper import load_reference_data
+from raytrax.types import Beam, RadialProfiles
 
 TRAVIS_REF_FILE = Path(__file__).parent / "data" / "travis_w7x_reference.json"
 B0_TARGET = 2.52076
@@ -224,29 +225,29 @@ class TestTravisComparison:
 
     def test_position(self, comparison):
         _print_summary(comparison)
-        assert (
-            comparison["pos_rms_mm"] < 5.0
-        ), f"Position RMS {comparison['pos_rms_mm']:.2f} mm exceeds 5 mm"
+        assert comparison["pos_rms_mm"] < 5.0, (
+            f"Position RMS {comparison['pos_rms_mm']:.2f} mm exceeds 5 mm"
+        )
 
     def test_magnetic_field(self, comparison):
-        assert (
-            comparison["B_mean_pct"] < 2.0
-        ), f"|B| mean error {comparison['B_mean_pct']:.2f}% exceeds 2%"
+        assert comparison["B_mean_pct"] < 2.0, (
+            f"|B| mean error {comparison['B_mean_pct']:.2f}% exceeds 2%"
+        )
 
     def test_electron_density(self, comparison):
-        assert (
-            comparison["ne_mean_pct"] < 3.0
-        ), f"ne mean error {comparison['ne_mean_pct']:.2f}% exceeds 3%"
+        assert comparison["ne_mean_pct"] < 3.0, (
+            f"ne mean error {comparison['ne_mean_pct']:.2f}% exceeds 3%"
+        )
 
     def test_electron_temperature(self, comparison):
-        assert (
-            comparison["te_mean_pct"] < 3.0
-        ), f"Te mean error {comparison['te_mean_pct']:.2f}% exceeds 3%"
+        assert comparison["te_mean_pct"] < 3.0, (
+            f"Te mean error {comparison['te_mean_pct']:.2f}% exceeds 3%"
+        )
 
     def test_rho(self, comparison):
-        assert (
-            comparison["rho_rms"] < 0.02
-        ), f"rho RMS {comparison['rho_rms']:.4f} exceeds 0.02"
+        assert comparison["rho_rms"] < 0.02, (
+            f"rho RMS {comparison['rho_rms']:.4f} exceeds 0.02"
+        )
 
     def test_optical_depth_report(self, comparison):
         """Report optical depth deviation. Known ~25% off (absorption model WIP)."""

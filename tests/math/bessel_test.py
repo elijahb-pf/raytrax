@@ -2,10 +2,11 @@ import jax
 import jax.numpy as jnp
 import numpy as np
 import pytest
-from raytrax.math.bessel import jv_jax, kv_jax, kve_jax
 from scipy.special import jv as scipy_jv
 from scipy.special import kv as scipy_kv
 from scipy.special import kve as scipy_kve
+
+from raytrax.math.bessel import jv_jax, kv_jax, kve_jax
 
 jax.config.update("jax_enable_x64", True)
 _MACHINE_PRECISION = float(jnp.finfo(float).eps)
@@ -26,7 +27,9 @@ def test_jv_jax_derivative(v):
     z = jnp.linspace(-10, 10, 2000, dtype=jnp.float64)
     dx = z[1] - z[0]
 
-    jv_scalar = lambda zi: jv_jax(v, zi)
+    def jv_scalar(zi):
+        return jv_jax(v, zi)
+
     value = jv_scalar(z)
 
     derivative = jax.vmap(jax.grad(jv_scalar))(z)
@@ -53,7 +56,9 @@ def test_kv_jax_derivative(v):
     z = jnp.linspace(0.5, 10, 2000, dtype=jnp.float64)
     dx = z[1] - z[0]
 
-    kv_scalar = lambda zi: kv_jax(v, zi)
+    def kv_scalar(zi):
+        return kv_jax(v, zi)
+
     value = kv_scalar(z)
 
     derivative = jax.vmap(jax.grad(kv_scalar))(z)
@@ -93,7 +98,9 @@ def test_kve_jax_derivative(v):
     z = jnp.linspace(0.5, 20, 2000, dtype=jnp.float64)
     dx = z[1] - z[0]
 
-    kve_scalar = lambda zi: kve_jax(v, zi)
+    def kve_scalar(zi):
+        return kve_jax(v, zi)
+
     value = kve_scalar(z)
 
     derivative = jax.vmap(jax.grad(kve_scalar))(z)

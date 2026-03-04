@@ -1,6 +1,6 @@
 import jax
-import jax.numpy as jnp
 import numpy as np
+
 from raytrax.math import shkarofsky
 
 jax.config.update("jax_enable_x64", True)
@@ -152,7 +152,7 @@ def test_shkarofsky_impl_f12():
             expected,
             rtol=1e-15,
             atol=0.0,
-            err_msg=f"F_{1/2} failed for phi={phi}, psi={psi}",
+            err_msg=f"F_{1 / 2} failed for phi={phi}, psi={psi}",
         )
 
 
@@ -168,7 +168,7 @@ def test_shkarofsky_impl_f32():
             expected,
             rtol=1e-15,
             atol=0.0,
-            err_msg=f"F_{3/2} failed for phi={phi}, psi={psi}",
+            err_msg=f"F_{3 / 2} failed for phi={phi}, psi={psi}",
         )
 
 
@@ -184,7 +184,7 @@ def test_shkarofsky_impl_f52():
             expected,
             rtol=5e-14,  # a bit worse
             atol=0.0,
-            err_msg=f"F_{5/2} failed for phi={phi}, psi={psi}",
+            err_msg=f"F_{5 / 2} failed for phi={phi}, psi={psi}",
         )
 
 

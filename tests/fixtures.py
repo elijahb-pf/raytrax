@@ -1,5 +1,5 @@
-from dataclasses import dataclass
 import os
+from dataclasses import dataclass
 from pathlib import Path
 
 import jax
@@ -8,8 +8,8 @@ import numpy as np
 import pytest
 from vmecpp import VmecWOut
 
-from raytrax.examples import get_w7x_equilibrium
 from raytrax.equilibrium.interpolate import MagneticConfiguration
+from raytrax.examples import get_w7x_equilibrium
 
 
 @dataclass

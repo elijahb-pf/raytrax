@@ -7,23 +7,24 @@ Measures:
 - Memory usage and trajectory statistics
 """
 
+import sys
 import time
-import numpy as np
+from pathlib import Path
+
 import jax
 import jax.numpy as jnp
-from pathlib import Path
-import sys
+import numpy as np
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from raytrax.api import trace
-from raytrax.equilibrium.interpolate import MagneticConfiguration
-from raytrax.types import Beam, RadialProfiles
-from raytrax.examples import get_w7x_equilibrium as get_w7x_wout
 from raytrax.equilibrium.interpolate import (
+    MagneticConfiguration,
     build_magnetic_field_interpolator,
     build_rho_interpolator,
 )
+from raytrax.examples import get_w7x_equilibrium as get_w7x_wout
+from raytrax.types import Beam, RadialProfiles
 
 
 def travis_profile(rho, t0, width, exponent, pedestal_value, pedestal_position, shift):
@@ -122,9 +123,9 @@ def setup_w7x_scenario():
 def format_time(seconds):
     """Format time in appropriate units."""
     if seconds < 0.001:
-        return f"{seconds*1e6:.1f} μs"
+        return f"{seconds * 1e6:.1f} μs"
     elif seconds < 1:
-        return f"{seconds*1000:.1f} ms"
+        return f"{seconds * 1000:.1f} ms"
     else:
         return f"{seconds:.2f} s"
 
@@ -214,7 +215,7 @@ def main():
     print(f"    Trajectory points: {len(s)}")
     print(f"    Arc length: {s[0]:.3f} -> {s[-1]:.3f} m")
     print(f"    Final optical depth: τ = {tau[-1]:.4f}")
-    print(f"    Absorption: {100*(1 - np.exp(-tau[-1])):.2f}%")
+    print(f"    Absorption: {100 * (1 - np.exp(-tau[-1])):.2f}%")
     print(f"    Max α: {np.nanmax(alpha):.2f} m⁻¹")
     print()
 
@@ -238,7 +239,7 @@ def main():
         elapsed = time.perf_counter() - t0
         times.append(elapsed)
         if (i + 1) % 5 == 0:
-            print(f"    Run {i+1:2d}: {format_time(elapsed)}")
+            print(f"    Run {i + 1:2d}: {format_time(elapsed)}")
 
     times = np.array(times)
     print()
@@ -261,16 +262,16 @@ def main():
     B = np.asarray(result.beam_profile.magnetic_field)
     rho = np.asarray(result.beam_profile.normalized_effective_radius)
 
-    print(f"  Position range:")
+    print("  Position range:")
     print(f"    x: [{pos[:, 0].min():.3f}, {pos[:, 0].max():.3f}] m")
     print(f"    y: [{pos[:, 1].min():.3f}, {pos[:, 1].max():.3f}] m")
     print(f"    z: [{pos[:, 2].min():.3f}, {pos[:, 2].max():.3f}] m")
     print(
-        f"    R: [{np.sqrt(pos[:, 0]**2 + pos[:, 1]**2).min():.3f}, {np.sqrt(pos[:, 0]**2 + pos[:, 1]**2).max():.3f}] m"
+        f"    R: [{np.sqrt(pos[:, 0] ** 2 + pos[:, 1] ** 2).min():.3f}, {np.sqrt(pos[:, 0] ** 2 + pos[:, 1] ** 2).max():.3f}] m"
     )
     print()
 
-    print(f"  Plasma parameters:")
+    print("  Plasma parameters:")
     print(f"    ρ: [{rho.min():.3f}, {rho.max():.3f}]")
     print(f"    ne: [{ne.min():.2f}, {ne.max():.2f}] × 10²⁰ m⁻³")
     print(f"    Te: [{te.min():.3f}, {te.max():.3f}] keV")
@@ -279,7 +280,7 @@ def main():
     )
     print()
 
-    print(f"  Absorption profile:")
+    print("  Absorption profile:")
     print(f"    α range: [{np.nanmin(alpha):.2e}, {np.nanmax(alpha):.2e}] m⁻¹")
     print(f"    Points with α > 1 m⁻¹: {np.sum(alpha > 1)}/{len(alpha)}")
     print(f"    Points with α > 10 m⁻¹: {np.sum(alpha > 10)}/{len(alpha)}")
@@ -293,8 +294,8 @@ def main():
     print(f"  Compilation time:     {format_time(t_compile)}")
     print(f"  Runtime (median):     {format_time(np.median(times))}")
     print(f"  Speedup over compile: {t_compile / np.median(times):.1f}x")
-    print(f"  Trajectory length:    {len(s)} points, {s[-1]-s[0]:.3f} m")
-    print(f"  Final absorption:     {100*(1 - np.exp(-tau[-1])):.2f}%")
+    print(f"  Trajectory length:    {len(s)} points, {s[-1] - s[0]:.3f} m")
+    print(f"  Final absorption:     {100 * (1 - np.exp(-tau[-1])):.2f}%")
     print("=" * 80)
 
 

@@ -3,6 +3,7 @@ from typing import Literal
 import jax
 import jax.numpy as jnp
 import jaxtyping as jt
+
 from raytrax.physics import dispersion
 
 ScalarFloat = float | jt.Float[jax.Array, " "]

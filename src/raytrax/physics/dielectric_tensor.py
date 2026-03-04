@@ -1,9 +1,9 @@
 import jax
 import jax.numpy as jnp
 import jaxtyping as jt
-from raytrax.math import shkarofsky
 from jax.scipy.special import gamma
-from scipy import constants
+
+from raytrax.math import shkarofsky
 
 ScalarInt = int | jt.Int[jax.Array, " "]
 ScalarFloat = float | jt.Float[jax.Array, " "]

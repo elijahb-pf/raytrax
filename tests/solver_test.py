@@ -1,6 +1,7 @@
+import interpax
 import jax
 import jax.numpy as jnp
-import interpax
+
 from raytrax import ray, solver
 from raytrax.types import Interpolators
 

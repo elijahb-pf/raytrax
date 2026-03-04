@@ -3,7 +3,7 @@
 import matplotlib.pyplot as plt
 import numpy as np
 
-from raytrax.types import BeamProfile, RadialProfiles, RadialProfile
+from raytrax.types import BeamProfile, RadialProfile, RadialProfiles
 
 
 def plot_radial_electron_density(radial_profiles: RadialProfiles, ax=None):

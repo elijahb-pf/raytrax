@@ -1,6 +1,7 @@
 import jax
 import jax.numpy as jnp
 import numpy as np
+
 from raytrax.physics.dispersion import (
     dispersion_cold,
     dispersion_tensor_stix,

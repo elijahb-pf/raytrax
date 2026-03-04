@@ -156,8 +156,11 @@ def _right_hand_side(
 
     state = _y_to_state(y, s)
 
-    eval_B = lambda pos: _eval_magnetic_field(pos, interpolators, nfp)
-    eval_rho = lambda pos: _eval_rho(pos, interpolators, nfp)
+    def eval_B(pos):
+        return _eval_magnetic_field(pos, interpolators, nfp)
+
+    def eval_rho(pos):
+        return _eval_rho(pos, interpolators, nfp)
 
     # Compute both Hamiltonian gradients in a single backward pass
     hamiltonian_gradient_r, hamiltonian_gradient_n = hamiltonian.hamiltonian_gradients(

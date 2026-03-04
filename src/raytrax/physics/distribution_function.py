@@ -1,6 +1,7 @@
 import jax
 import jax.numpy as jnp
 import jaxtyping as jt
+
 from raytrax.math import bessel
 
 ScalarFloat = float | jt.Float[jax.Array, " "]
