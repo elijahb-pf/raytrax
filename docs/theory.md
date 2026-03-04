@@ -50,11 +50,11 @@ This dispersion relation connects the wave vector $\boldsymbol{k}$ to the freque
 
 ## Raytrax Inputs and Outputs
 
-The main outputs of raytrax are the **ray trajectory** $\boldsymbol{r}(s)$, where $s$ is the arc length along the ray, and the **linear deposition power density** $dP/ds$, which can be computed from the absorption coefficient $\alpha$.
+The main outputs of [`trace`][raytrax.api.trace] are the **ray trajectory** $\boldsymbol{r}(s)$ and the **linear deposition power density** $dP/ds$, both available in the [`BeamProfile`][raytrax.types.BeamProfile] inside the returned [`TraceResult`][raytrax.types.TraceResult]. The volumetric deposition profile as a function of $\rho$ is in [`RadialProfile`][raytrax.types.RadialProfile].
 
-The inputs are the **magnetic field** $\boldsymbol{B}(\boldsymbol{r})$, **electron density** $n_e(\boldsymbol{r})$, and **temperature** $T(\boldsymbol{r})$, which together determine the dielectric tensor $\boldsymbol{\varepsilon}$.
+The inputs are the **magnetic field** $\boldsymbol{B}(\boldsymbol{r})$, **electron density** $n_e(\boldsymbol{r})$, and **temperature** $T(\boldsymbol{r})$ (provided via [`MagneticConfiguration`][raytrax.equilibrium.interpolate.MagneticConfiguration] and [`RadialProfiles`][raytrax.types.RadialProfiles]), which together determine the dielectric tensor $\boldsymbol{\varepsilon}_r$.
 
-Additionally, the initial conditions for the ray (initial position $\boldsymbol{r}_0$ and direction $\hat{\boldsymbol{s}}_0$) and the wave frequency $\omega$ are required.
+Additionally, the initial conditions for the ray (initial position $\boldsymbol{r}_0$, direction $\hat{\boldsymbol{s}}_0$, and wave frequency $\omega$) are specified in the [`Beam`][raytrax.types.Beam].
 
 ## Conventions
 

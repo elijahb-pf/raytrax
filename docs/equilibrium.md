@@ -4,7 +4,7 @@ icon: lucide/magnet
 
 # Loading a MHD Equilibrium
 
-One of the inputs to Raytrax is a magnetic configuration, which is a grid in cylindrical coordinates holding the values of the magnetic field $\vec{B}$, the effective minor radius $\rho$, and some other geometric quantities. Raytrax can compute this configuration a magnetohydrodynamic (MHD) equilibrium.
+One of the inputs to Raytrax is a [`MagneticConfiguration`][raytrax.equilibrium.interpolate.MagneticConfiguration], which is a grid in cylindrical coordinates holding the values of the magnetic field $\vec{B}$, the effective minor radius $\rho$, and some other geometric quantities. Raytrax can compute this configuration from a magnetohydrodynamic (MHD) equilibrium.
 
 At present, Raytrax supports loading equilibria from the [VMEC++](https://proximafusion.github.io/vmecpp/) code, which is a modern implementation of the widely used VMEC code for computing stellarator equilibria.
 
@@ -36,7 +36,7 @@ vmec_wout = vmec_output.wout
 For more options and details, see the [VMEC++ documentation](https://proximafusion.github.io/vmecpp/).
 
 
-Once you have the `VmecWOut` object, you can create a `raytrax.MagneticConfiguration` from it:
+Once you have the `VmecWOut` object, you can create a [`MagneticConfiguration`][raytrax.equilibrium.interpolate.MagneticConfiguration] from it:
 
 ```python
 mag_conf = raytrax.MagneticConfiguration.from_vmec_wout(vmec_wout)

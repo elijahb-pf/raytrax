@@ -27,7 +27,7 @@ If you forget this, raytrax will emit a warning at import time.
 
 ## Your First Trace
 
-Before starting to simulate fusion heating, it's important to understand some of the technical characteristics of Raytrax. Since it's based on [JAX](https://docs.jax.dev), it profits from just-in-time compilation and automatic differentiability. This comes with a cost: the first invocation of the `trace` command will be fairly slow since the computation needs to be compiled first. That's why it wouldn't make much sense to use Raytrax as a command line script. Instead, it's meant to be used inside a Python program — for example in an optimization loop — where the compiled function is reused across many calls.
+Before starting to simulate fusion heating, it's important to understand some of the technical characteristics of Raytrax. Since it's based on [JAX](https://docs.jax.dev), it profits from just-in-time compilation and automatic differentiability. This comes with a cost: the first invocation of [`trace`][raytrax.api.trace] will be fairly slow since the computation needs to be compiled first. That's why it wouldn't make much sense to use Raytrax as a command line script. Instead, it's meant to be used inside a Python program — for example in an optimization loop — where the compiled function is reused across many calls.
 
 ### Prepare Inputs
 
@@ -37,7 +37,7 @@ Raytrax requires three inputs:
 2. Radial plasma profiles
 3. Beam settings.
 
-The **magnetic configuration** is a grid in cylindrical coordinates holding the values of the magnetic field $\vec{B}$, the effective minor radius $\rho$, and some other geometric quantities. Raytrax can compute this configuration from a [VMEC++](https://proximafusion.github.io/vmecpp/) MHD equilibrium.
+The **[`MagneticConfiguration`][raytrax.equilibrium.interpolate.MagneticConfiguration]** is a grid in cylindrical coordinates holding the values of the magnetic field $\vec{B}$, the effective minor radius $\rho$, and some other geometric quantities. Raytrax can compute this configuration from a [VMEC++](https://proximafusion.github.io/vmecpp/) MHD equilibrium.
 
 An example where an equilibrium is loaded from a NetCDF file:
 
@@ -53,7 +53,7 @@ mag_conf = raytrax.MagneticConfiguration.from_vmec_wout(vmec_wout)
 
 You can save the configuration to a file and load it back with the object's `.save` and `.load` methods.
 
-The **radial plasma profiles** are gridded one-dimensional profiles for the electron density $n_e$ (in units of 10<sup>20</sup>/m³) and temperature $T_e$ (in units of keV) as a function of the effective minor radius $\rho$, which must extend from 0 to 1. You should ensure that both density and temperature are zero at the plasma boundary ($\rho$). Example:
+The **[`RadialProfiles`][raytrax.types.RadialProfiles]** are gridded one-dimensional profiles for the electron density $n_e$ (in units of 10<sup>20</sup>/m³) and temperature $T_e$ (in units of keV) as a function of the effective minor radius $\rho$, which must extend from 0 to 1. You should ensure that both density and temperature are zero at the plasma boundary ($\rho$). Example:
 
 ```python
 import raytrax, jax.numpy as jnp
@@ -68,7 +68,7 @@ profiles = raytrax.RadialProfiles(
 )
 ```
 
-The **beam settings** define the properties of the microwave beam to be traced: its starting position (a vector in Cartesian coordinates), initial direction (a unit 3-vector), frequency (in Hz, not GHz!), wave mode (ordinary or extraordinary mode), and initial power (in W). Example:
+The **[`Beam`][raytrax.types.Beam]** defines the properties of the microwave beam to be traced: its starting position (a vector in Cartesian coordinates), initial direction (a unit 3-vector), frequency (in Hz, not GHz!), wave mode (ordinary or extraordinary mode), and initial power (in W). Example:
 
 ```python
 import raytrax, jax.numpy as jnp
@@ -96,10 +96,10 @@ result = raytrax.trace(
 )
 ```
 
-The returned `TraceResult` object contains:
+The returned [`TraceResult`][raytrax.types.TraceResult] contains:
 
-- `beam_profile` — quantities along the beam trajectory in Cartesian space: position, arc length, refractive index, optical depth, absorption coefficient, electron density, electron temperature, magnetic field, effective minor radius $\rho$, and linear power density.
-- `radial_profile` — the volumetric power deposition density as a function of $\rho$.
+- `beam_profile` — a [`BeamProfile`][raytrax.types.BeamProfile] with quantities along the beam trajectory in Cartesian space: position, arc length, refractive index, optical depth, absorption coefficient, electron density, electron temperature, magnetic field, effective minor radius $\rho$, and linear power density.
+- `radial_profile` — a [`RadialProfile`][raytrax.types.RadialProfile] with the volumetric power deposition density as a function of $\rho$.
 - `absorbed_power` — total power absorbed by the plasma in W.
 - `absorbed_power_fraction` — fraction of the input beam power absorbed, i.e. $1 - e^{-\tau}$.
 - `optical_depth` — total optical depth $\tau$ accumulated along the ray.
