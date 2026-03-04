@@ -14,6 +14,17 @@ python -m pip install raytrax
 
 We recommend using a virtual environment to manage your dependencies.
 
+## Prerequisites: Enable 64-bit Precision
+
+Raytrax requires 64-bit floating-point arithmetic. JAX defaults to 32-bit, so you must opt in **before importing JAX or raytrax**:
+
+```python
+import jax
+jax.config.update("jax_enable_x64", True)
+```
+
+If you forget this, raytrax will emit a warning at import time.
+
 ## Your First Trace
 
 Before starting to simulate fusion heating, it's important to understand some of the technical characteristics of Raytrax. Since it's based on [JAX](https://docs.jax.dev), it profits from just-in-time compilation and automatic differentiability. This comes with a cost: the first invocation of the `trace` command will be fairly slow since the computation needs to be compiled first. That's why it wouldn't make much sense to use Raytrax as a command line script. Instead, it's meant to be used inside a Python program — for example in an optimization loop — where the compiled function is reused across many calls.
@@ -31,6 +42,9 @@ The **magnetic configuration** is a grid in cylindrical coordinates holding the 
 An example where an equilibrium is loaded from a NetCDF file:
 
 ```python
+import jax
+jax.config.update("jax_enable_x64", True)
+
 import raytrax, vmecpp
 
 vmec_wout = vmecpp.VmecWOut.from_wout_file("w7x.nc")

@@ -1,8 +1,15 @@
 """Main module for Raytrax."""
 
+import warnings
+
 import jax
 
-jax.config.update("jax_enable_x64", True)
+if not getattr(jax.config, "jax_enable_x64", False):
+    warnings.warn(
+        "raytrax requires 64-bit precision. "
+        "Call jax.config.update('jax_enable_x64', True) before importing JAX or raytrax.",
+        stacklevel=2,
+    )
 
 from .api import trace as trace
 from .equilibrium.interpolate import MagneticConfiguration as MagneticConfiguration

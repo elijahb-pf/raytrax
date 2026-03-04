@@ -24,6 +24,10 @@ import contextlib
 import io
 import warnings
 
+import jax
+
+jax.config.update("jax_enable_x64", True)
+
 warnings.filterwarnings("ignore", category=DeprecationWarning, module="equinox")
 warnings.filterwarnings("ignore", category=UserWarning, message=".*non-interactive.*")
 
