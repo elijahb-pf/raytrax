@@ -79,14 +79,14 @@ class WoutLike(Protocol):
 
     rmnc: jt.Float[jax.Array, "n_fourier_coefficients n_surfaces"]
     zmns: jt.Float[jax.Array, "n_fourier_coefficients n_surfaces"]
-    xm: jt.Int[jax.Array, "n_fourier_coefficients"]
-    xn: jt.Int[jax.Array, "n_fourier_coefficients"]
+    xm: jt.Int[jax.Array, " n_fourier_coefficients"]
+    xn: jt.Int[jax.Array, " n_fourier_coefficients"]
     gmnc: jt.Float[jax.Array, "n_fourier_coefficients n_surfaces"]
     gmns: jt.Float[jax.Array, "n_fourier_coefficients n_surfaces"]
     bsupumnc: jt.Float[jax.Array, "n_fourier_coefficients_nyquist n_surfaces"]
     bsupvmnc: jt.Float[jax.Array, "n_fourier_coefficients_nyquist n_surfaces"]
-    xm_nyq: jt.Int[jax.Array, "n_fourier_coefficients_nyquist"]
-    xn_nyq: jt.Int[jax.Array, "n_fourier_coefficients_nyquist"]
+    xm_nyq: jt.Int[jax.Array, " n_fourier_coefficients_nyquist"]
+    xn_nyq: jt.Int[jax.Array, " n_fourier_coefficients_nyquist"]
     ns: int
     nfp: int
     lasym: bool
@@ -119,31 +119,31 @@ class BeamProfile:
     position: jt.Float[jax.Array, "npoints 3"]
     """The position of the beam in cartesian coordinates."""
 
-    arc_length: jt.Float[jax.Array, "npoints"]
+    arc_length: jt.Float[jax.Array, " npoints"]
     """The arc length along the beam."""
 
     refractive_index: jt.Float[jax.Array, "npoints 3"]
     """The refractive index vector at each point along the beam."""
 
-    optical_depth: jt.Float[jax.Array, "npoints"]
+    optical_depth: jt.Float[jax.Array, " npoints"]
     """The optical depth along the beam."""
 
-    absorption_coefficient: jt.Float[jax.Array, "npoints"]
+    absorption_coefficient: jt.Float[jax.Array, " npoints"]
     """The absorption coefficient along the beam."""
 
-    electron_density: jt.Float[jax.Array, "npoints"]
+    electron_density: jt.Float[jax.Array, " npoints"]
     """The electron density along the beam in units of $10^{20}$ m$^{-3}."""
 
-    electron_temperature: jt.Float[jax.Array, "npoints"]
+    electron_temperature: jt.Float[jax.Array, " npoints"]
     """The electron temperature along the beam in keV."""
 
     magnetic_field: jt.Float[jax.Array, "npoints 3"]
     """The magnetic field vector along the beam in T."""
 
-    normalized_effective_radius: jt.Float[jax.Array, "npoints"]
+    normalized_effective_radius: jt.Float[jax.Array, " npoints"]
     r"""The normalized effective minor radius $\rho$ along the beam."""
 
-    linear_power_density: jt.Float[jax.Array, "npoints"]
+    linear_power_density: jt.Float[jax.Array, " npoints"]
     """The linear power density along the beam."""
 
 
@@ -151,10 +151,10 @@ class BeamProfile:
 class RadialProfile:
     """Beam profile in radial coordinates."""
 
-    rho: jt.Float[jax.Array, "npoints"]
+    rho: jt.Float[jax.Array, " npoints"]
     """The normalized effective minor radius."""
 
-    volumetric_power_density: jt.Float[jax.Array, "npoints"]
+    volumetric_power_density: jt.Float[jax.Array, " npoints"]
     """The volumetric power density in W/m³."""
 
 
@@ -192,13 +192,13 @@ class RadialProfiles:
     normalized effective radius $\rho$.
     """
 
-    rho: jt.Float[jax.Array, "nrho"]
+    rho: jt.Float[jax.Array, " nrho"]
     """The normalized effective minor radius grid."""
 
-    electron_density: jt.Float[jax.Array, "nrho"]
+    electron_density: jt.Float[jax.Array, " nrho"]
     """The electron density profile in units of $10^{20}$ m$^{-3}$."""
 
-    electron_temperature: jt.Float[jax.Array, "nrho"]
+    electron_temperature: jt.Float[jax.Array, " nrho"]
     """The electron temperature profile in keV."""
 
 

@@ -46,7 +46,7 @@ class MagneticConfiguration(SafetensorsMixin):
     magnetic_field: jt.Float[jax.Array, "npoints 3"]
     r"""The magnetic field $(B_R, B_\phi, B_Z)$ in cylindrical components at each grid point."""
 
-    rho: jt.Float[jax.Array, "npoints"]
+    rho: jt.Float[jax.Array, " npoints"]
     """The normalized effective minor radius at each point on the interpolation grid."""
 
     nfp: int
@@ -55,10 +55,10 @@ class MagneticConfiguration(SafetensorsMixin):
     is_stellarator_symmetric: bool
     """Whether the configuration has stellarator symmetry."""
 
-    rho_1d: jt.Float[jax.Array, "nrho_1d"]
+    rho_1d: jt.Float[jax.Array, " nrho_1d"]
     """1D radial grid for volume derivative."""
 
-    dvolume_drho: jt.Float[jax.Array, "nrho_1d"]
+    dvolume_drho: jt.Float[jax.Array, " nrho_1d"]
     r"""Volume derivative $dV/d\rho$ on the 1D radial grid."""
 
     is_axisymmetric: bool = False

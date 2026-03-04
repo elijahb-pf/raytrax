@@ -273,8 +273,8 @@ def evaluate_magnetic_field_on_toroidal_grid(
 
 @jt.jaxtyped(typechecker=typechecker)
 def dvolume_drho(
-    equilibrium: WoutLike, rho: jt.Float[jax.Array, "n_rho"]
-) -> jt.Float[jax.Array, "n_rho"]:
+    equilibrium: WoutLike, rho: jt.Float[jax.Array, " n_rho"]
+) -> jt.Float[jax.Array, " n_rho"]:
     """Compute the derivative of the volume with respect to the effective radius."""
     s_full = jnp.linspace(0, 1, equilibrium.ns)
     g00_coefficients = jnp.asarray(equilibrium.gmnc)[0:1, :]  # Shape: (1, ns)
