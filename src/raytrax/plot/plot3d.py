@@ -1,6 +1,7 @@
 """Visualization functions for Raytrax."""
 
 import numpy as np
+import pyvista as pv
 
 from raytrax.equilibrium.interpolate import MagneticConfiguration
 from raytrax.types import BeamProfile
@@ -23,7 +24,6 @@ def plot_flux_surface_3d(
     Returns:
         A PyVista plotter object. Call .show() to display.
     """
-    import pyvista as pv
 
     grid = magnetic_configuration.to_pyvista_grid()
 
@@ -69,8 +69,6 @@ def plot_b_surface_3d(
     Returns:
         A PyVista plotter object. Call ``.show()`` to display.
     """
-    import pyvista as pv
-
     grid = magnetic_configuration.to_pyvista_grid()
 
     # Fill NaN values so clip_scalar and contour work correctly:
@@ -126,8 +124,6 @@ def plot_beam_profile_3d(
     Returns:
         A PyVista plotter object. Call .show() to display.
     """
-    import pyvista as pv
-
     # Get beam data
     position = np.array(beam_profile.position)
     power_density = np.array(beam_profile.linear_power_density)
