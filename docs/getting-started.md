@@ -16,7 +16,7 @@ We recommend using a virtual environment to manage your dependencies.
 
 ## Your First Trace
 
-Before starting to simulate fusion heating, it's important to understand some of the technical characteristics of Raytrax. Since it's based on [JAX](https://docs.jax.dev), it profits from just-in-time compilation and automatic differentiability. This comes with a cost: the first invocation of the `trace` command will be fairly slow since the computation needs to be compiled first. That's why it wouldn't make much sense to use Raytrax as a command line script. Instead, it's meant to be used in a Python program where 
+Before starting to simulate fusion heating, it's important to understand some of the technical characteristics of Raytrax. Since it's based on [JAX](https://docs.jax.dev), it profits from just-in-time compilation and automatic differentiability. This comes with a cost: the first invocation of the `trace` command will be fairly slow since the computation needs to be compiled first. That's why it wouldn't make much sense to use Raytrax as a command line script. Instead, it's meant to be used inside a Python program — for example in an optimization loop — where the compiled function is reused across many calls.
 
 ### Prepare Inputs
 
@@ -75,14 +75,18 @@ Once the inputs are ready, you can run the ray tracer:
 ```python
 import raytrax
 
-tracing_result = raytrax.trace(
+result = raytrax.trace(
     magnetic_configuration=mag_conf,
     radial_profiles=profiles,
     beam=beam,
 )
 ```
 
-The `TracingResult` object holds two properties:
+The returned `TraceResult` object contains:
 
-- The `beam_profile` contains the quantities along the beam's trajectory through Cartesian space
-- The `radial_profile` contains the quantities projected unto the radial coordinate $\rho$
+- `beam_profile` — quantities along the beam trajectory in Cartesian space: position, arc length, refractive index, optical depth, absorption coefficient, electron density, electron temperature, magnetic field, effective minor radius $\rho$, and linear power density.
+- `radial_profile` — the volumetric power deposition density as a function of $\rho$.
+- `absorbed_power` — total power absorbed by the plasma in W.
+- `absorbed_power_fraction` — fraction of the input beam power absorbed, i.e. $1 - e^{-\tau}$.
+- `optical_depth` — total optical depth $\tau$ accumulated along the ray.
+- `deposition_rho_mean` / `deposition_rho_std` — volume-weighted mean and standard deviation of the deposition location in $\rho$.
