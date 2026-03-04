@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools >= 77.0.3"]
+requires = ["setuptools >= 77.0.3", "setuptools-scm"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools.packages.find]
@@ -9,9 +9,11 @@ include = ["raytrax*"]
 [tool.setuptools.package-data]
 raytrax = ["equilibrium/data/w7x.json"]
 
+[tool.setuptools_scm]
+
 [project]
 name = "raytrax"
-version = "0.0.1"
+dynamic = ["version"]
 dependencies = [
   "jax",
   "jaxtyping",
