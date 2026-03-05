@@ -1,7 +1,3 @@
----
-icon: lucide/box
----
-
 # 3D Visualisation
 
 The `raytrax.plot.plot3d` module uses [PyVista](https://pyvista.org) to render
