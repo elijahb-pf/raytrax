@@ -1,10 +1,10 @@
+"""Relativistic Maxwell-Jüttner electron distribution function and its energy derivative."""
+
 import jax
 import jax.numpy as jnp
-import jaxtyping as jt
 
 from raytrax.math import bessel
-
-ScalarFloat = float | jt.Float[jax.Array, " "]
+from raytrax.types import ScalarFloat
 
 
 def maxwell_juettner_distribution(

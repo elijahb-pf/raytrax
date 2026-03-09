@@ -1,10 +1,12 @@
+"""Cold plasma dispersion relation (Appleton-Hartree) and dispersion tensor in Stix coordinates."""
+
 from typing import Literal
 
 import jax
 import jax.numpy as jnp
 import jaxtyping as jt
 
-ScalarFloat = float | jt.Float[jax.Array, " "]
+from raytrax.types import ScalarFloat
 
 
 def dispersion_cold(
