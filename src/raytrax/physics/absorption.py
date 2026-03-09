@@ -118,6 +118,77 @@ def absorption_coefficient(
         dielectric_tensor=dielectric_tensor,
         polarization_vector=polarization_vector,
     )
+    eAe = anti_hermitian_dielectric_form(
+        plasma_frequency=plasma_frequency,
+        cyclotron_frequency=cyclotron_frequency,
+        frequency=frequency,
+        refractive_index_para=refractive_index_para,
+        refractive_index_perp=refractive_index_perp,
+        thermal_velocity=thermal_velocity,
+        polarization_vector=polarization_vector,
+    )
+    # Absorption coefficient: alpha = (omega/c) * eAe / |F|
+    # where eAe = ê* · ε_r^A · ê is the anti-Hermitian dielectric form
+    # and F is the power flux vector (F = 0.5 * dH/dN).
+    omega = 2 * jnp.pi * frequency
+
+    # Avoid division by zero or NaN when power flux is very small or invalid (near cutoff)
+    power_flux_magnitude = jnp.linalg.norm(power_flux_vector)
+    power_flux_threshold = 1e-10
+    # Check for both small magnitude and NaN/Inf
+    is_valid = (power_flux_magnitude >= power_flux_threshold) & jnp.isfinite(
+        power_flux_magnitude
+    )
+    return jax.lax.cond(
+        is_valid,
+        lambda: omega / (2 * speed_of_light) * eAe / power_flux_magnitude,
+        lambda: 0.0,
+    )
+
+
+def anti_hermitian_dielectric_form(
+    plasma_frequency: ScalarFloat,
+    cyclotron_frequency: ScalarFloat,
+    frequency: ScalarFloat,
+    refractive_index_para: ScalarFloat,
+    refractive_index_perp: ScalarFloat,
+    thermal_velocity: ScalarFloat,
+    polarization_vector: jt.Complex[jax.Array, "3"],
+) -> ScalarFloat:
+    r"""Compute $\hat{e}^* \cdot \boldsymbol{\varepsilon}_r^A \cdot \hat{e}$, the
+    anti-Hermitian part of the relative dielectric tensor contracted with the
+    polarization vector.
+
+    This is the numerator quantity in the absorption coefficient formula,
+
+    .. math::
+        \alpha = \frac{\omega}{c} \frac{\hat{e}^* \cdot \boldsymbol{\varepsilon}_r^A \cdot \hat{e}}{|F|}
+
+    where :math:`F` is the power flux vector.  The result is positive for an absorbing
+    plasma.
+
+    The anti-Hermitian part is computed via the fully relativistic momentum-space
+    resonance integral (Bornatici et al. 1983), summed over cyclotron harmonics:
+
+    .. math::
+        \hat{e}^* \cdot \boldsymbol{\varepsilon}_r^A \cdot \hat{e}
+        = -X_p \cdot 4\pi^2 \sum_s I_s
+
+    where :math:`X_p = (\omega_p/\omega)^2` and :math:`I_s` is the resonance integral
+    for harmonic :math:`s` (negative for absorption).
+
+    Args:
+        plasma_frequency: Electron plasma frequency in Hz.
+        cyclotron_frequency: Electron cyclotron frequency in Hz.
+        frequency: Wave frequency in Hz.
+        refractive_index_para: Refractive index parallel to the magnetic field.
+        refractive_index_perp: Refractive index perpendicular to the magnetic field.
+        thermal_velocity: Normalized electron thermal velocity (v_th / c).
+        polarization_vector: Normalized polarization vector in Stix coordinates.
+
+    Returns:
+        The scalar quadratic form :math:`\hat{e}^* \cdot \boldsymbol{\varepsilon}_r^A \cdot \hat{e}` (dimensionless).
+    """  # noqa: E501
     resonance_integral = 0.0
     # TODO extend to higher harmonics - currently only 1st and 2nd harmonic
     for harmonic_index in range(1, 3):
@@ -151,34 +222,8 @@ def absorption_coefficient(
                 thermal_velocity=thermal_velocity,
             ),
         )
-    # Absorption coefficient from Fidone et al., Phys. Fluids 1988:
-    #   alpha = (omega/(8*pi)) * Xp * I / |S|
-    # where S is the Poynting flux and I is the resonance integral over d³u,
-    # with f normalized so that ∫ f d³u = 1.
-    #
-    # Converting S -> power flux F = 0.5 * dH/dN via S = (c/(16*pi)) * dH/dN:
-    #   alpha = omega*Xp/c * I / |F|
-    #
-    # TODO(dstraub): prefactor to be double-checked against literature
-    #
-    # The resonance_integral < 0 for absorption, giving alpha > 0.
-
-    omega = 2 * jnp.pi * frequency
     Xp = (plasma_frequency / frequency) ** 2
-    prefactor = -omega * Xp / speed_of_light * 4 * jnp.pi**2
-
-    # Avoid division by zero or NaN when power flux is very small or invalid (near cutoff)
-    power_flux_magnitude = jnp.linalg.norm(power_flux_vector)
-    power_flux_threshold = 1e-10
-    # Check for both small magnitude and NaN/Inf
-    is_valid = (power_flux_magnitude >= power_flux_threshold) & jnp.isfinite(
-        power_flux_magnitude
-    )
-    return jax.lax.cond(
-        is_valid,
-        lambda: prefactor * resonance_integral / power_flux_magnitude,
-        lambda: 0.0,
-    )
+    return -Xp * 8 * jnp.pi**2 * resonance_integral
 
 
 def compute_resonance_integral(
